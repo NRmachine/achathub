@@ -25,15 +25,23 @@ class VercelBoot extends Command
             return self::SUCCESS;
         }
 
-        $connection = DB::connection();
-        $usesPostgres = $connection->getDriverName() === 'pgsql';
+        $defaultConnection = DB::connection();
+        $usesPostgres = $defaultConnection->getDriverName() === 'pgsql';
+        $migrationConnectionName = $usesPostgres ? 'pgsql_migration' : (string) config('database.default');
+        $migrationConnection = DB::connection($migrationConnectionName);
 
         try {
             if ($usesPostgres) {
-                $connection->statement('SELECT pg_advisory_lock('.self::MIGRATION_LOCK.')');
+                // Le verrou doit utiliser la connexion directe Neon : un verrou de session
+                // n'est pas fiable derrière PgBouncer en mode transaction.
+                $migrationConnection->statement('SELECT pg_advisory_lock('.self::MIGRATION_LOCK.')');
             }
 
-            $exitCode = Artisan::call('migrate', ['--force' => true]);
+            $migrationOptions = ['--force' => true];
+            if ($usesPostgres) {
+                $migrationOptions['--database'] = $migrationConnectionName;
+            }
+            $exitCode = Artisan::call('migrate', $migrationOptions);
             $this->output->write(Artisan::output());
             if ($exitCode !== self::SUCCESS) {
                 return self::FAILURE;
@@ -55,7 +63,7 @@ class VercelBoot extends Command
         } finally {
             if ($usesPostgres) {
                 try {
-                    $connection->statement('SELECT pg_advisory_unlock('.self::MIGRATION_LOCK.')');
+                    $migrationConnection->statement('SELECT pg_advisory_unlock('.self::MIGRATION_LOCK.')');
                 } catch (Throwable) {
                     // La connexion peut déjà être fermée après une erreur réseau.
                 }
