@@ -1,0 +1,8 @@
+@extends('layouts.admin')
+@section('title','Conversation avec '.$conversation->user->name)
+@section('admin-content')
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3"><div><a href="{{ route('admin.conversations.index') }}" class="small text-decoration-none">← Toutes les conversations</a><h1 class="h3 mb-0">{{ $conversation->user->name }}</h1><span>{{ $conversation->user->email }} · {{ $conversation->user->role === 'reseller' ? 'Revendeur pro' : 'Client classique' }}</span></div><div class="d-flex gap-2"><a class="btn btn-outline-dark" href="{{ route('admin.customers.show',$conversation->user) }}">Voir le profil</a><form method="post" action="{{ route('admin.conversations.status',$conversation) }}">@csrf @method('patch')<input type="hidden" name="status" value="{{ $conversation->status==='Ouverte'?'Fermée':'Ouverte' }}"><button class="btn btn-light">{{ $conversation->status==='Ouverte'?'Fermer':'Rouvrir' }}</button></form></div></div>
+<div class="chat-page admin-chat"><div class="chat-thread">
+@foreach($conversation->messages as $message)<article class="chat-bubble {{ $message->sender->role==='admin'?'mine':'theirs' }}"><strong>{{ $message->sender->role==='admin'?'AchatHub':$conversation->user->name }}</strong><p>{{ $message->body }}</p><time>{{ $message->created_at->format('d/m/Y à H:i') }}</time></article>@endforeach
+</div><form method="post" action="{{ route('admin.conversations.store',$conversation) }}" class="chat-composer">@csrf<textarea name="body" rows="2" maxlength="3000" required placeholder="Répondre au client…"></textarea><button><i class="bi bi-send-fill"></i><span>Envoyer</span></button></form></div>
+@endsection

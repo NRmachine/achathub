@@ -1,0 +1,12 @@
+<form class="catalog-filters" action="{{ route('home') }}">
+    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
+    @if(request('family'))<input type="hidden" name="family" value="{{ request('family') }}">@endif
+    @if(request('subcategory'))<input type="hidden" name="subcategory" value="{{ request('subcategory') }}">@endif
+    <div class="catalog-filter-title"><strong>Filtres</strong><a href="{{ route('home') }}">Effacer</a></div>
+    <label class="form-label" for="category-{{ $filterId }}">Catégorie</label><select id="category-{{ $filterId }}" name="category" class="form-select"><option value="">Toutes les catégories</option>@foreach($categories as $category)<option value="{{ $category->slug }}" @selected(request('category')===$category->slug)>{{ $category->name }} ({{ $category->products_count }})</option>@endforeach</select>
+    <label class="form-label" for="brand-{{ $filterId }}">Marque</label><select id="brand-{{ $filterId }}" name="brand" class="form-select"><option value="">Toutes les marques</option>@foreach($brands as $brand)<option @selected(request('brand')===$brand)>{{ $brand }}</option>@endforeach</select>
+    <fieldset><legend>Prix</legend><div class="row g-2"><div class="col"><label class="visually-hidden" for="min-price-{{ $filterId }}">Prix minimum</label><div class="input-group"><input id="min-price-{{ $filterId }}" class="form-control" type="number" name="min_price" value="{{ request('min_price') }}" min="0" step="1" placeholder="Min"><span class="input-group-text">€</span></div></div><div class="col"><label class="visually-hidden" for="max-price-{{ $filterId }}">Prix maximum</label><div class="input-group"><input id="max-price-{{ $filterId }}" class="form-control" type="number" name="max_price" value="{{ request('max_price') }}" min="0" max="{{ ceil($maxCatalogPrice) }}" step="1" placeholder="Max"><span class="input-group-text">€</span></div></div></div></fieldset>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="in_stock" value="1" id="stock-{{ $filterId }}" @checked(request('in_stock'))><label class="form-check-label" for="stock-{{ $filterId }}">Afficher uniquement les produits en stock</label></div>
+    @if(request('sort'))<input type="hidden" name="sort" value="{{ request('sort') }}">@endif
+    <button class="btn btn-dark w-100">Afficher les produits</button>
+</form>

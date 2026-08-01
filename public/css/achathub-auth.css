@@ -1,0 +1,65 @@
+.professional-login-shell {
+    min-height: calc(100vh - 250px);
+    display: flex;
+    align-items: center;
+    background: #f4f6f8;
+}
+
+.professional-login-card {
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid var(--ah-border);
+    border-top: 4px solid var(--ah-orange);
+    border-radius: 6px;
+}
+
+.professional-login-points {
+    display: grid;
+    gap: .7rem;
+}
+
+.professional-login-points span {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    font-weight: 650;
+}
+
+.professional-login-points i {
+    color: var(--ah-orange);
+    font-size: 1.2rem;
+}
+
+.professional-login-links {
+    display: grid;
+    gap: .55rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.professional-login-links a {
+    color: var(--ah-navy);
+}
+
+@media (max-width: 767px) {
+    .professional-login-shell {
+        align-items: flex-start;
+    }
+
+    .professional-login-shell .display-6 {
+        font-size: 2rem;
+    }
+
+    .professional-login-card {
+        padding: 1.1rem;
+    }
+}
+
+.admin-login-body .topbar,.admin-login-body .shop-search,.admin-login-body .shop-menu-button,.admin-login-body .shop-category-bar,.admin-login-body footer,.admin-login-body .mobile-shop-nav{display:none!important}
+.admin-login-body .shop-header-grid{grid-template-columns:1fr}.admin-login-body .navbar-shop{position:static!important}
+.admin-login-shell{min-height:calc(100vh - 92px);display:grid;align-items:center;background:#f1f3f6}
+.admin-login-card{padding:28px;background:#fff;border:1px solid #dfe4ea;border-top:4px solid var(--ah-orange);border-radius:6px;box-shadow:0 18px 45px rgba(15,23,42,.08)}
+.admin-login-mark{width:48px;height:48px;display:grid;place-items:center;margin-bottom:18px;background:#111827;color:#fff;border-radius:6px;font-size:1.35rem}
+.admin-login-card>span{color:var(--ah-orange);font-size:.75rem;font-weight:800}.admin-login-card h1{font-size:1.65rem;margin:5px 0 8px}.admin-login-card>p{color:#687386;margin-bottom:22px}
+.admin-login-back{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:18px;color:#344054;text-decoration:none;font-weight:650}.admin-login-security{text-align:center;color:#687386;font-size:.8rem;margin:16px 0 0}
+@media(max-width:767px){.admin-login-shell{min-height:calc(100vh - 64px);align-items:start}.admin-login-shell>.container{padding-top:28px!important}.admin-login-card{padding:21px}.admin-login-card h1{font-size:1.45rem}}

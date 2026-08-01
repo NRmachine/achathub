@@ -1,0 +1,39 @@
+FROM composer:2 AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
+
+FROM php:8.4-cli-alpine
+
+RUN apk add --no-cache libxml2 libpq libxml2-dev postgresql-dev \
+    && docker-php-ext-install dom pdo_pgsql opcache \
+    && apk del libxml2-dev postgresql-dev
+
+RUN printf '%s\n' \
+    'opcache.enable=1' \
+    'opcache.enable_cli=1' \
+    'opcache.validate_timestamps=0' \
+    'opcache.memory_consumption=128' \
+    'opcache.max_accelerated_files=10000' \
+    > /usr/local/etc/php/conf.d/opcache-production.ini
+
+WORKDIR /var/www/html
+COPY --from=vendor /app/vendor ./vendor
+COPY . .
+COPY vercel-runtime.env .env
+
+RUN rm -f bootstrap/cache/*.php \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+USER www-data
+EXPOSE 80
+
+CMD ["sh", "-c", "mkdir -p /tmp/achathub/framework/cache/data /tmp/achathub/framework/sessions /tmp/achathub/framework/views /tmp/achathub/logs && exec php artisan serve --host=0.0.0.0 --port=${PORT:-80}"]

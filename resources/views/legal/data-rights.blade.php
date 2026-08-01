@@ -1,0 +1,7 @@
+@extends($layout)
+@section('title','Mes données et mes droits')
+@section($section)
+<div class="rights-page"><header><span>VIE PRIVÉE</span><h1>Mes données et mes droits</h1><p>Transmettez une demande RGPD directement depuis votre compte authentifié.</p></header>
+<div class="admin-surface"><form method="post" action="{{ route('data-rights.store') }}">@csrf<div class="row g-3"><div class="col-md-5"><label class="form-label">Droit exercé</label><select class="form-select" name="type" required><option>Accès</option><option>Rectification</option><option>Suppression</option><option>Opposition</option><option>Portabilité</option></select></div><div class="col-12"><label class="form-label">Précisions</label><textarea class="form-control" name="message" rows="4" maxlength="3000"></textarea></div><div class="col-12"><button class="btn btn-dark">Envoyer ma demande</button></div></div></form></div>
+<h2 class="h5 mt-4">Suivi de mes demandes</h2><div class="list-group">@forelse($requests as $item)<div class="list-group-item"><div class="d-flex justify-content-between"><strong>{{ $item->type }}</strong><span class="badge text-bg-light">{{ $item->status }}</span></div><small>{{ $item->created_at->format('d/m/Y') }}</small>@if($item->message)<p class="mb-0 mt-2">Votre demande : {{ $item->message }}</p>@endif @if($item->admin_response)<p class="mb-0 mt-2">Réponse AchatHub : {{ $item->admin_response }}</p>@endif</div>@empty<div class="list-group-item">Aucune demande en cours.</div>@endforelse</div></div>
+@endsection
