@@ -43,7 +43,7 @@ class ImportProfessionalDisplays extends Command
                     $definition + [
                         'wholesale_price_ht' => $block['total'],
                         'vat_rate' => 20,
-                        'image' => '/assets/presentoir-achathub.png',
+                        'image' => '/assets/presentoir-achathub.webp',
                         'active' => true,
                         'sort_order' => $index + 1,
                     ]

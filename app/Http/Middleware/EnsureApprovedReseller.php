@@ -11,9 +11,10 @@ class EnsureApprovedReseller
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        $application = $user?->resellerRequest;
         $approved = $user?->role === 'reseller'
             && ! $user->blocked
-            && $user->resellerRequest()->where('status', 'Approuvée')->exists();
+            && $application?->status === 'Approuvée';
 
         if (! $approved) {
             return redirect()->route('reseller.dashboard')->with('error', 'Votre espace professionnel sera accessible après validation de votre demande.');

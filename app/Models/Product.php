@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\OptimizedAsset;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -9,6 +11,11 @@ class Product extends Model
     protected $fillable = ['category_id', 'legacy_id', 'sku', 'name', 'slug', 'brand', 'model', 'family', 'subcategory', 'price', 'old_price', 'discount', 'stock', 'rating', 'reviews_count', 'condition', 'tag', 'image', 'images', 'description', 'features', 'active', 'featured', 'featured_order'];
 
     protected $casts = ['images' => 'array', 'features' => 'array', 'active' => 'boolean', 'featured' => 'boolean', 'price' => 'decimal:2', 'old_price' => 'decimal:2', 'rating' => 'float', 'reviews_count' => 'integer'];
+
+    protected function image(): Attribute
+    {
+        return Attribute::make(get: fn (?string $value): ?string => OptimizedAsset::image($value));
+    }
 
     public function category()
     {

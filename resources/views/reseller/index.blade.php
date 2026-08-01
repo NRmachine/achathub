@@ -8,19 +8,31 @@
                 <span class="badge text-bg-warning mb-3">Programme professionnel</span>
                 <h1 class="display-5 fw-bold">Développez vos ventes avec un présentoir prêt à poser</h1>
                 <p class="lead text-white-50">AchatHub équipe votre commerce avec une sélection d’accessoires utiles et faciles à vendre. Choisissez le dépôt-vente ou l’achat en gros.</p>
-                <a class="btn btn-warning btn-lg" href="#demande">Déposer ma demande</a>
+                <div class="d-flex flex-wrap gap-2"><a class="btn btn-warning btn-lg" href="#demande">Créer mon accès Pro</a><a class="btn btn-outline-light btn-lg" href="{{ route('professional.login') }}">Déjà client Pro ? Se connecter</a></div>
             </div>
-            <div class="col-lg-6"><img class="img-fluid rounded shadow" src="{{ asset('assets/presentoir-achathub.png') }}" alt="Présentoir professionnel AchatHub"></div>
+            <div class="col-lg-6"><img class="img-fluid rounded shadow" src="{{ asset('assets/presentoir-achathub.webp') }}" width="1400" height="782" alt="Présentoir professionnel AchatHub" fetchpriority="high" decoding="async"></div>
         </div>
+    </div>
+</section>
+
+<section class="py-4 bg-white border-bottom" aria-label="Avantages professionnels">
+    <div class="container reseller-benefits">
+        <article class="reseller-benefit"><i class="bi bi-tags"></i><h2>Tarifs revendeurs HT</h2><p>Prix professionnels et minimums de commande clairement affichés.</p></article>
+        <article class="reseller-benefit"><i class="bi bi-box-seam"></i><h2>Présentoirs prêts à vendre</h2><p>Trois formats avec leur sélection de références déjà composée.</p></article>
+        <article class="reseller-benefit"><i class="bi bi-receipt"></i><h2>Commandes et factures</h2><p>Suivez vos achats et retrouvez vos factures depuis votre compte Pro.</p></article>
+        <article class="reseller-benefit"><i class="bi bi-chat-dots"></i><h2>Conseil commercial</h2><p>Échangez avec AchatHub dans votre messagerie professionnelle.</p></article>
     </div>
 </section>
 
 <section class="py-5 bg-light">
     <div class="container">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4"><div><span class="text-uppercase small fw-bold text-warning">Offres professionnelles</span><h2 class="fw-bold mb-1">Choisissez votre présentoir</h2><p class="text-secondary mb-0">Les tarifs et le nombre de références proviennent du catalogue AchatHub Pro.</p></div><a class="btn btn-outline-dark" href="{{ route('professional.login') }}">Accéder aux produits en gros</a></div>
         <div class="row g-4">
-            @foreach([['Petit présentoir','Comptoir, salon, institut ou petite boutique.'],['Présentoir moyen','Supérette, téléphonie ou commerce de proximité.'],['Grand présentoir','Magasin high-tech ou point de vente à fort passage.']] as $offer)
-            <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body p-4"><h2 class="h5 fw-bold">{{ $offer[0] }}</h2><p class="text-secondary mb-0">{{ $offer[1] }}</p></div></div></div>
-            @endforeach
+            @forelse($offers as $offer)
+            <div class="col-md-4"><article class="reseller-offer"><span class="badge text-bg-light align-self-start mb-3">{{ $offer->products_count }} références incluses</span><h2>{{ $offer->name }}</h2><p>{{ $offer->description }}</p><div class="reseller-offer-price">{{ number_format($offer->wholesale_price_ht, 2, ',', ' ') }} € <small>HT</small></div><a class="btn btn-dark mt-3" href="#demande">Demander l’accès Pro</a></article></div>
+            @empty
+            <div class="col-12"><div class="alert alert-light border mb-0">Les offres de présentoirs sont momentanément en cours de mise à jour. Créez votre accès Pro pour être informé.</div></div>
+            @endforelse
         </div>
     </div>
 </section>
@@ -36,6 +48,7 @@
                     <li class="mb-3">Notre équipe contrôle et valide votre dossier.</li>
                     <li>Accédez au catalogue grossiste et commandez vos présentoirs.</li>
                 </ol>
+                <div class="border rounded p-3 bg-light"><strong><i class="bi bi-check-circle text-success me-1"></i> Un seul compte Pro</strong><p class="small text-secondary mb-0 mt-1">Catalogue en gros, présentoirs, panier, commandes, factures et messagerie sont réunis au même endroit.</p></div>
             </div>
             <div class="col-lg-8">
                 @guest

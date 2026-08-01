@@ -8,14 +8,20 @@ use Illuminate\Support\Facades\Cache;
 
 class StorefrontNavigation
 {
+    private ?array $resolved = null;
+
     public function data(): array
     {
-        if (app()->environment('testing')) {
-            Cache::store('file')->forget('storefront.navigation.v3');
+        if ($this->resolved !== null) {
+            return $this->resolved;
         }
 
-        $data = Cache::store('file')->remember(
-            'storefront.navigation.v3',
+        if (app()->environment('testing')) {
+            Cache::forget('storefront.navigation.v4');
+        }
+
+        $data = Cache::remember(
+            'storefront.navigation.v4',
             now()->addMinutes(10),
             function (): array {
                 $menuCategories = Category::query()
@@ -104,7 +110,7 @@ class StorefrontNavigation
             }
         );
 
-        return [
+        return $this->resolved = [
             'menuCategories' => collect($data['menuCategories'])->map(fn (array $item): object => (object) $item),
             'menuSubcategories' => collect($data['menuSubcategories'])
                 ->map(fn (array $items) => collect($items)->map(fn (array $item): object => (object) $item)),

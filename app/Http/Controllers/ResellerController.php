@@ -2,17 +2,43 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProfessionalDisplay;
 use App\Models\ResellerRequest;
 use App\Services\TransactionalMailer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ResellerController extends Controller
 {
     public function index(Request $request)
     {
         $application = $request->user()?->resellerRequest;
+        if (app()->environment('testing')) {
+            Cache::forget('professional.public-displays.v1');
+        }
 
-        return view('reseller.index', compact('application'));
+        $offers = Cache::remember(
+            'professional.public-displays.v1',
+            now()->addMinutes(15),
+            fn (): array => ProfessionalDisplay::query()
+                ->where('active', true)
+                ->withCount('products')
+                ->orderBy('sort_order')
+                ->limit(3)
+                ->get()
+                ->map(fn (ProfessionalDisplay $display): array => [
+                    'name' => $display->name,
+                    'description' => $display->description,
+                    'wholesale_price_ht' => (float) $display->wholesale_price_ht,
+                    'products_count' => (int) $display->products_count,
+                ])
+                ->all(),
+        );
+
+        return view('reseller.index', [
+            'application' => $application,
+            'offers' => collect($offers)->map(fn (array $offer): object => (object) $offer),
+        ]);
     }
 
     public function store(Request $request, TransactionalMailer $mailer)

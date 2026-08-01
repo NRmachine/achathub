@@ -55,6 +55,18 @@ class CommerceTest extends TestCase
         $this->get(route('home', ['sort' => 'price_asc']))->assertOk()->assertSeeInOrder(['Chargeur économique', 'Chargeur rapide']);
     }
 
+    public function test_storefront_exposes_simple_account_pro_cart_and_service_shortcuts(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Accès rapides')
+            ->assertSee('Stock visible')
+            ->assertSee('Facture disponible')
+            ->assertSee('Connexion professionnelle')
+            ->assertSee('achathub-mark.webp', false)
+            ->assertSee('achathub-speed-commerce.css', false);
+    }
+
     public function test_only_a_customer_with_a_delivered_purchase_can_publish_a_review(): void
     {
         $category = Category::create(['name' => 'Chargeurs', 'slug' => 'chargeurs']);

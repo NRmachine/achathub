@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\SiteSetting;
 use App\Services\StorefrontNavigation;
+use App\Support\OptimizedAsset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,7 +15,7 @@ class StoreController extends Controller
     public function index(Request $request, StorefrontNavigation $navigation)
     {
         $selectedCategory = $request->filled('category')
-            ? Category::with('children.children')->where('slug', $request->category)->first()
+            ? Category::with(['parent', 'children.children'])->where('slug', $request->category)->first()
             : null;
         $selectedCategoryIds = $selectedCategory
             ? $this->loadedCatalogIds($selectedCategory)
@@ -63,10 +64,10 @@ class StoreController extends Controller
 
         $categories = $navigation->data()['menuCategories'];
         if (app()->environment('testing')) {
-            Cache::store('file')->forget('storefront.catalog-metadata.v3');
+            Cache::forget('storefront.catalog-metadata.v4');
         }
-        $metadata = Cache::store('file')->remember(
-            'storefront.catalog-metadata.v3',
+        $metadata = Cache::remember(
+            'storefront.catalog-metadata.v4',
             now()->addMinutes(10),
             fn (): array => [
                 'settings' => SiteSetting::query()
@@ -126,7 +127,12 @@ class StoreController extends Controller
     {
         abort_unless($product->active, 404);
         $product->load(['category', 'reviews' => fn ($query) => $query->where('published', true)->with('user')->latest()->limit(20)]);
-        $gallery = collect([$product->image])->merge($product->images ?? [])->filter()->unique()->values();
+        $gallery = collect([$product->image])
+            ->merge($product->images ?? [])
+            ->map(fn (?string $image): ?string => OptimizedAsset::image($image))
+            ->filter()
+            ->unique()
+            ->values();
         $similarProducts = Product::query()->where('active', true)->where('stock', '>', 0)->whereKeyNot($product->id)
             ->where(function ($query) use ($product) {
                 $query->where('category_id', $product->category_id);

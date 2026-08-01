@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\OptimizedAsset;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class ProfessionalDisplay extends Model
@@ -11,6 +13,11 @@ class ProfessionalDisplay extends Model
     protected function casts(): array
     {
         return ['wholesale_price_ht' => 'decimal:2', 'vat_rate' => 'decimal:2', 'active' => 'boolean'];
+    }
+
+    protected function image(): Attribute
+    {
+        return Attribute::make(get: fn (?string $value): ?string => OptimizedAsset::image($value));
     }
 
     public function items()

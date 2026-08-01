@@ -42,7 +42,7 @@ class CartController extends Controller
                 'product' => [
                     'name' => $product->name,
                     'price' => number_format($product->price, 2, ',', ' ').' €',
-                    'image' => $product->image ?: asset('assets/category-accessoires.png'),
+                    'image' => $product->image ?: asset('assets/category-accessoires.webp'),
                     'url' => route('products.show', $product),
                 ],
             ]);

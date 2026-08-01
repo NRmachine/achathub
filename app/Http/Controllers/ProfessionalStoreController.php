@@ -27,11 +27,11 @@ class ProfessionalStoreController extends Controller
             ->withQueryString();
 
         if (app()->environment('testing')) {
-            Cache::store('file')->forget('professional.catalog-categories.v1');
+            Cache::forget('professional.catalog-categories.v2');
         }
 
-        $categories = Cache::store('file')->remember(
-            'professional.catalog-categories.v1',
+        $categories = Cache::remember(
+            'professional.catalog-categories.v2',
             now()->addMinutes(10),
             fn (): array => ProfessionalProduct::query()
                 ->where('active', true)

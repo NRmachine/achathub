@@ -1,0 +1,83 @@
+.pro-commercial-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 1rem;
+    border: 1px solid var(--pro-line);
+    border-radius: 6px;
+    background: #fff;
+}
+
+.pro-commercial-bar > div,
+.pro-commercial-bar > a {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: .7rem;
+    padding: .85rem 1rem;
+    border-right: 1px solid var(--pro-line);
+    color: var(--pro-ink);
+    text-decoration: none;
+}
+
+.pro-commercial-bar > :last-child {
+    border-right: 0;
+}
+
+.pro-commercial-bar > a {
+    background: #fff8f5;
+    color: #a53610;
+}
+
+.pro-commercial-bar > div > i,
+.pro-commercial-bar > a > i:first-child {
+    color: var(--pro-accent);
+    font-size: 1.2rem;
+}
+
+.pro-commercial-bar span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.pro-commercial-bar strong {
+    font-size: .82rem;
+}
+
+.pro-commercial-bar small {
+    overflow: hidden;
+    color: var(--pro-muted);
+    font-size: .68rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1199px) {
+    .pro-commercial-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pro-commercial-bar > :nth-child(2) {
+        border-right: 0;
+    }
+
+    .pro-commercial-bar > :nth-child(-n+2) {
+        border-bottom: 1px solid var(--pro-line);
+    }
+}
+
+@media (max-width: 575px) {
+    .pro-commercial-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .pro-commercial-bar > div,
+    .pro-commercial-bar > a {
+        border-right: 0;
+        border-bottom: 1px solid var(--pro-line);
+    }
+
+    .pro-commercial-bar > :last-child {
+        border-bottom: 0;
+    }
+}

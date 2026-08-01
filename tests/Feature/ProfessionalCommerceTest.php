@@ -22,6 +22,26 @@ class ProfessionalCommerceTest extends TestCase
         $this->assertDatabaseCount('reseller_requests', 0);
     }
 
+    public function test_public_professional_page_shows_real_display_offer_and_price(): void
+    {
+        ProfessionalDisplay::create([
+            'name' => 'Petit présentoir comptoir',
+            'slug' => 'petit-presentoir-public',
+            'description' => 'Sélection prête à vendre.',
+            'wholesale_price_ht' => 130.30,
+            'vat_rate' => 20,
+            'active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->get(route('reseller.index'))
+            ->assertOk()
+            ->assertSee('Petit présentoir comptoir')
+            ->assertSee('130,30 €')
+            ->assertSee('Tarifs revendeurs HT')
+            ->assertSee('Déjà client Pro ? Se connecter');
+    }
+
     public function test_pending_reseller_cannot_access_wholesale_catalog(): void
     {
         $user = User::factory()->create();
@@ -43,7 +63,11 @@ class ProfessionalCommerceTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('users', ['id' => $user->id, 'role' => 'reseller']);
-        $this->actingAs($user->refresh())->get(route('pro.index'))->assertOk();
+        $this->actingAs($user->refresh())
+            ->get(route('pro.index'))
+            ->assertOk()
+            ->assertSee('Besoin d’un conseil ?')
+            ->assertSee('Facture Pro');
     }
 
     public function test_approved_reseller_can_order_a_display(): void

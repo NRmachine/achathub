@@ -6,6 +6,13 @@
     <a class="btn btn-outline-dark d-none d-md-inline-flex" href="{{ route('pro.displays') }}"><i class="bi bi-box-seam me-2"></i>Voir les présentoirs complets</a>
 </div>
 
+<section class="pro-commercial-bar" aria-label="Services professionnels">
+    <div><i class="bi bi-grid"></i><span><strong>{{ $categories->sum('total') }} références</strong><small>Catalogue grossiste</small></span></div>
+    <div><i class="bi bi-box-seam"></i><span><strong>Stock visible</strong><small>Quantités indiquées par produit</small></span></div>
+    <div><i class="bi bi-receipt"></i><span><strong>Facture Pro</strong><small>Disponible dans votre compte</small></span></div>
+    <a href="{{ route('messages.index') }}"><i class="bi bi-chat-dots"></i><span><strong>Besoin d’un conseil ?</strong><small>Écrire au service commercial</small></span><i class="bi bi-arrow-right ms-auto"></i></a>
+</section>
+
 <div class="pro-steps">
     <div class="pro-step"><b>1</b><span><strong>Consultez le catalogue</strong>Découvrez les références et leurs tarifs indicatifs HT.</span></div>
     <div class="pro-step"><b>2</b><span><strong>Choisissez vos quantités</strong>Respectez le minimum indiqué pour chaque référence.</span></div>
@@ -31,7 +38,7 @@
             <div class="pro-product-price">{{ number_format($product->wholesale_price_ht,2,',',' ') }} € <small>HT / unité</small></div>
             <div class="pro-product-min">Minimum {{ $product->minimum_order_quantity }} unités · Stock {{ $product->stock }}</div>
             @if($product->stock >= $product->minimum_order_quantity)
-            <form class="pro-preorder-form d-flex gap-2" method="post" action="{{ route('pro.cart.products.add',$product) }}">@csrf<input class="form-control" style="max-width:90px" type="number" name="quantity" value="{{ $product->minimum_order_quantity }}" min="{{ $product->minimum_order_quantity }}" max="{{ $product->stock }}" aria-label="Quantité de {{ $product->name }}"><button class="flex-grow-1"><i class="bi bi-cart-plus me-2"></i>Ajouter</button></form>
+            <form class="pro-preorder-form d-flex gap-2" method="post" action="{{ route('pro.cart.products.add',$product) }}">@csrf<input class="form-control" style="max-width:90px" type="number" name="quantity" value="{{ $product->minimum_order_quantity }}" min="{{ $product->minimum_order_quantity }}" max="{{ $product->stock }}" aria-label="Quantité de {{ $product->name }}"><button class="flex-grow-1"><i class="bi bi-cart-plus me-2"></i>Ajouter au panier</button></form>
             @else
             <form class="pro-preorder-form" method="post" action="{{ route('pro.products.preorder',$product) }}">@csrf<button><i class="bi bi-send me-2"></i>Précommander le réassort</button></form>
             @endif
