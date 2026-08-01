@@ -15,7 +15,9 @@ use Throwable;
 #[Description('Prépare la base AchatHub au démarrage du conteneur Vercel')]
 class VercelBoot extends Command
 {
-    private const MIGRATION_LOCK = 118006512;
+    // Nouveau verrou direct : l’ancien identifiant a été conservé par une
+    // session PgBouncer créée avant le passage à DATABASE_URL_UNPOOLED.
+    private const MIGRATION_LOCK = 118006513;
 
     public function handle(): int
     {
