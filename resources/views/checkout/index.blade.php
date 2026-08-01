@@ -35,4 +35,4 @@
     </form>
 </div>
 @endsection
-@push('scripts')<script src="{{ asset('js/checkout.js') }}" defer></script>@endpush
+@push('scripts')<script src="{{ asset('js/checkout.js') }}?v=20260802b" defer></script>@endpush

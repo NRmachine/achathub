@@ -1,5 +1,5 @@
 <article class="shop-card p-3 d-flex flex-column">
-    <a class="product-card-image" href="{{ route('products.show',$product) }}"><img src="{{ $product->image ?: asset('assets/category-accessoires.webp') }}" class="product-img" alt="{{ $product->name }}" loading="lazy" decoding="async">@if($product->discount)<span class="badge discount">-{{ $product->discount }} %</span>@endif</a>
+    <a class="product-card-image" href="{{ route('products.show',$product) }}"><img src="{{ $product->image ?: asset('assets/category-accessoires.webp').'?v=20260802b' }}" class="product-img" alt="{{ $product->name }}" loading="lazy" decoding="async">@if($product->discount)<span class="badge discount">-{{ $product->discount }} %</span>@endif</a>
     <div class="product-card-brand">{{ $product->brand ?: $product->category?->name }}</div>
     <a class="product-card-name" href="{{ route('products.show',$product) }}">{{ $product->name }}</a>
     @if($product->model)<div class="product-card-compatibility"><i class="bi bi-check-circle"></i> {{ str($product->model)->limit(38) }}</div>@endif

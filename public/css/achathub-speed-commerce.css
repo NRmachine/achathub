@@ -1,5 +1,5 @@
 .hero {
-    background-image: linear-gradient(90deg, rgba(7, 17, 38, .94) 0%, rgba(7, 17, 38, .74) 48%, rgba(7, 17, 38, .1) 100%), url('/assets/achathub-hero-accessoires.webp');
+    background-image: linear-gradient(90deg, rgba(7, 17, 38, .94) 0%, rgba(7, 17, 38, .74) 48%, rgba(7, 17, 38, .1) 100%), url('/assets/achathub-hero-accessoires.webp?v=20260802b');
 }
 
 header .shop-header-grid {

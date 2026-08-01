@@ -10,7 +10,7 @@
                 <p class="lead text-white-50">AchatHub équipe votre commerce avec une sélection d’accessoires utiles et faciles à vendre. Choisissez le dépôt-vente ou l’achat en gros.</p>
                 <div class="d-flex flex-wrap gap-2"><a class="btn btn-warning btn-lg" href="#demande">Créer mon accès Pro</a><a class="btn btn-outline-light btn-lg" href="{{ route('professional.login') }}">Déjà client Pro ? Se connecter</a></div>
             </div>
-            <div class="col-lg-6"><img class="img-fluid rounded shadow" src="{{ asset('assets/presentoir-achathub.webp') }}" width="1400" height="782" alt="Présentoir professionnel AchatHub" fetchpriority="high" decoding="async"></div>
+            <div class="col-lg-6"><img class="img-fluid rounded shadow" src="{{ asset('assets/presentoir-achathub.webp') }}?v=20260802b" width="1400" height="782" alt="Présentoir professionnel AchatHub" fetchpriority="high" decoding="async"></div>
         </div>
     </div>
 </section>

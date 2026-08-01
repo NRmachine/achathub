@@ -19,4 +19,4 @@
 </section>
 <div class="offcanvas offcanvas-start catalog-filter-offcanvas" tabindex="-1" id="catalogFilters" aria-labelledby="catalogFiltersTitle"><div class="offcanvas-header"><h2 class="h5 mb-0" id="catalogFiltersTitle">Filtrer les produits</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button></div><div class="offcanvas-body">@include('store.partials.filters', ['filterId' => 'mobile'])</div></div>
 @endsection
-@push('scripts')<script src="{{ asset('js/catalog.js') }}" defer></script>@endpush
+@push('scripts')<script src="{{ asset('js/catalog.js') }}?v=20260802b" defer></script>@endpush

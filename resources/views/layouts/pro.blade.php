@@ -9,10 +9,10 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="{{ asset('css/achathub-pro.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/achathub-pro-mobile.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/achathub-management.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/achathub-pro-commercial.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/achathub-pro.css') }}?v=20260802b" rel="stylesheet">
+    <link href="{{ asset('css/achathub-pro-mobile.css') }}?v=20260802b" rel="stylesheet">
+    <link href="{{ asset('css/achathub-management.css') }}?v=20260802b" rel="stylesheet">
+    <link href="{{ asset('css/achathub-pro-commercial.css') }}?v=20260802b" rel="stylesheet">
 </head>
 <body>
 @php
@@ -31,7 +31,7 @@
 <header class="pro-header sticky-top">
     <div class="container-fluid px-3 px-lg-4 py-2">
         <div class="d-flex align-items-center gap-3">
-            <a class="pro-brand" href="{{ route('pro.index') }}"><img src="{{ asset('assets/achathub-mark.webp') }}" width="38" height="38" alt=""><span>AchatHub <strong>PRO</strong></span></a>
+            <a class="pro-brand" href="{{ route('pro.index') }}"><img src="{{ asset('assets/achathub-mark.webp') }}?v=20260802b" width="38" height="38" alt=""><span>AchatHub <strong>PRO</strong></span></a>
             <form class="pro-search d-none d-md-flex" action="{{ route('pro.index') }}">
                 <i class="bi bi-search" aria-hidden="true"></i>
                 <input name="q" value="{{ request('q') }}" placeholder="Rechercher une référence ou un produit" aria-label="Rechercher dans le catalogue professionnel">
