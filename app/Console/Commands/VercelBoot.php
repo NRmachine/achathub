@@ -19,12 +19,6 @@ class VercelBoot extends Command
 
     public function handle(): int
     {
-        if (! filter_var(env('VERCEL_RUN_MIGRATIONS', false), FILTER_VALIDATE_BOOL)) {
-            $this->components->info('Migrations automatiques désactivées.');
-
-            return self::SUCCESS;
-        }
-
         $defaultConnection = DB::connection();
         $usesPostgres = $defaultConnection->getDriverName() === 'pgsql';
         $migrationConnectionName = $usesPostgres ? 'pgsql_migration' : (string) config('database.default');
