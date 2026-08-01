@@ -35,4 +35,4 @@ RUN rm -f bootstrap/cache/*.php \
 USER www-data
 EXPOSE 80
 
-CMD ["sh", "-c", "mkdir -p /tmp/achathub/framework/cache/data /tmp/achathub/framework/sessions /tmp/achathub/framework/views /tmp/achathub/logs && php artisan achathub:vercel-boot && exec php artisan serve --host=0.0.0.0 --port=${PORT:-80}"]
+CMD ["sh", "docker/vercel-start.sh"]
