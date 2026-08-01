@@ -76,6 +76,93 @@ class ProfessionalCommerceTest extends TestCase
         ]);
     }
 
+    public function test_approved_reseller_can_order_wholesale_products_directly(): void
+    {
+        $user = User::factory()->create(['role' => 'reseller']);
+        ResellerRequest::create($this->applicationData() + ['user_id' => $user->id, 'status' => 'Approuvée', 'approved_at' => now()]);
+        $product = ProfessionalProduct::create([
+            'sku' => 'PRO-DIRECT',
+            'name' => 'Câble USB-C grossiste',
+            'category' => 'Câbles',
+            'wholesale_price_ht' => 4.50,
+            'minimum_order_quantity' => 5,
+            'stock' => 30,
+            'active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('pro.cart.products.add', $product), ['quantity' => 10])
+            ->assertRedirect(route('pro.cart'));
+        $this->get(route('pro.cart'))->assertOk()->assertSee('Câble USB-C grossiste');
+        $this->post(route('pro.order'), [
+            'contact_name' => 'Jean Dupont',
+            'phone' => '0600000000',
+            'address' => '1 rue du Commerce',
+            'city' => 'Paris',
+            'payment_method' => 'Virement bancaire',
+        ])->assertRedirect(route('pro.account'));
+
+        $this->assertDatabaseHas('professional_products', ['id' => $product->id, 'stock' => 20]);
+        $this->assertDatabaseHas('professional_orders', ['user_id' => $user->id, 'subtotal_ht' => 45, 'vat_amount' => 9, 'total_ttc' => 54]);
+        $this->assertDatabaseHas('professional_order_items', [
+            'professional_product_id' => $product->id,
+            'quantity' => 10,
+            'price_ht' => 4.50,
+        ]);
+    }
+
+    public function test_wholesale_product_minimum_quantity_is_enforced(): void
+    {
+        $user = User::factory()->create(['role' => 'reseller']);
+        ResellerRequest::create($this->applicationData() + ['user_id' => $user->id, 'status' => 'Approuvée']);
+        $product = ProfessionalProduct::create([
+            'sku' => 'PRO-MINIMUM',
+            'name' => 'Chargeur grossiste',
+            'category' => 'Chargeurs secteur',
+            'wholesale_price_ht' => 6,
+            'minimum_order_quantity' => 5,
+            'stock' => 20,
+            'active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('pro.cart.products.add', $product), ['quantity' => 4])
+            ->assertSessionHasErrors('quantity');
+
+        $this->assertSame([], session('professional_cart', []));
+    }
+
+    public function test_admin_can_manage_wholesale_price_minimum_stock_and_visibility(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $product = ProfessionalProduct::create([
+            'sku' => 'PRO-ADMIN',
+            'name' => 'Produit à administrer',
+            'category' => 'Accessoires',
+            'wholesale_price_ht' => 5,
+            'minimum_order_quantity' => 5,
+            'stock' => 20,
+            'active' => true,
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.professional-products.update', $product), [
+            'category' => 'Câbles',
+            'wholesale_price_ht' => 4.25,
+            'minimum_order_quantity' => 10,
+            'stock' => 120,
+            'active' => '0',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('professional_products', [
+            'id' => $product->id,
+            'category' => 'Câbles',
+            'wholesale_price_ht' => 4.25,
+            'minimum_order_quantity' => 10,
+            'stock' => 120,
+            'active' => false,
+        ]);
+    }
+
     public function test_reseller_login_redirects_directly_to_professional_catalog(): void
     {
         $user = User::factory()->create(['role' => 'reseller']);

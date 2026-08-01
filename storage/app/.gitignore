@@ -1,4 +1,7 @@
 *
 !private/
 !public/
+!imports/
+imports/*
+!imports/presentoirs-dpower.csv
 !.gitignore

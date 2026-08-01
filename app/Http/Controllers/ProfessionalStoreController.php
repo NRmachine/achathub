@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class ProfessionalStoreController extends Controller
 {
+    private const VAT_RATE = 20;
+
     public function index(Request $request)
     {
         $products = ProfessionalProduct::query()
@@ -131,6 +133,46 @@ class ProfessionalStoreController extends Controller
         return back()->with('success', 'Présentoir retiré.');
     }
 
+    public function addProduct(Request $request, ProfessionalProduct $product)
+    {
+        abort_unless($product->active, 404);
+        abort_if($product->stock < $product->minimum_order_quantity, 422, 'Ce produit est temporairement indisponible à la commande.');
+
+        $quantity = $request->validate([
+            'quantity' => ['required', 'integer', 'min:'.$product->minimum_order_quantity, 'max:'.$product->stock],
+        ])['quantity'];
+        $cart = $this->normalizedCart($request);
+        $cart['products'][$product->id] = $quantity;
+        $request->session()->put('professional_cart', $cart);
+
+        return redirect()->route('pro.cart')->with('success', 'Produit ajouté au panier professionnel.');
+    }
+
+    public function updateProduct(Request $request, ProfessionalProduct $product)
+    {
+        abort_unless($product->active, 404);
+        $quantity = $request->validate([
+            'quantity' => ['required', 'integer', 'min:'.$product->minimum_order_quantity, 'max:'.$product->stock],
+        ])['quantity'];
+        $cart = $this->normalizedCart($request);
+
+        if (isset($cart['products'][$product->id])) {
+            $cart['products'][$product->id] = $quantity;
+            $request->session()->put('professional_cart', $cart);
+        }
+
+        return back()->with('success', 'Quantité mise à jour.');
+    }
+
+    public function removeProduct(Request $request, ProfessionalProduct $product)
+    {
+        $cart = $this->normalizedCart($request);
+        unset($cart['products'][$product->id]);
+        $request->session()->put('professional_cart', $cart);
+
+        return back()->with('success', 'Produit retiré.');
+    }
+
     public function preorder(Request $request, ProfessionalProduct $product)
     {
         abort_unless($product->active, 404);
@@ -192,6 +234,9 @@ class ProfessionalStoreController extends Controller
                     $stockRequirements[$item->professional_product_id] = ($stockRequirements[$item->professional_product_id] ?? 0) + ($item->quantity * $display->cart_quantity);
                 }
             }
+            foreach ($cartData['products'] as $product) {
+                $stockRequirements[$product->id] = ($stockRequirements[$product->id] ?? 0) + $product->cart_quantity;
+            }
 
             foreach ($stockRequirements as $productId => $required) {
                 $product = ProfessionalProduct::lockForUpdate()->findOrFail($productId);
@@ -219,6 +264,15 @@ class ProfessionalStoreController extends Controller
                     'vat_rate' => $display->vat_rate,
                 ]);
             }
+            foreach ($cartData['products'] as $product) {
+                $order->items()->create([
+                    'professional_product_id' => $product->id,
+                    'name' => $product->name,
+                    'price_ht' => $product->wholesale_price_ht,
+                    'quantity' => $product->cart_quantity,
+                    'vat_rate' => self::VAT_RATE,
+                ]);
+            }
 
             return $order;
         });
@@ -233,10 +287,13 @@ class ProfessionalStoreController extends Controller
     {
         $cart = $request->session()->get('professional_cart', []);
         if (isset($cart['displays']) || isset($cart['products'])) {
-            return ['displays' => $cart['displays'] ?? []];
+            return [
+                'displays' => $cart['displays'] ?? [],
+                'products' => $cart['products'] ?? [],
+            ];
         }
 
-        return ['displays' => $cart];
+        return ['displays' => $cart, 'products' => []];
     }
 
     private function cartData(Request $request): array
@@ -244,10 +301,20 @@ class ProfessionalStoreController extends Controller
         $cart = $this->normalizedCart($request);
         $displays = ProfessionalDisplay::with('items')->whereIn('id', array_keys($cart['displays']))->where('active', true)->orderBy('sort_order')->get();
         $displays->each(fn ($display) => $display->cart_quantity = (int) $cart['displays'][$display->id]);
-        $subtotalHt = round($displays->sum(fn ($display) => (float) $display->wholesale_price_ht * $display->cart_quantity), 2);
-        $vatAmount = round($displays->sum(fn ($display) => (float) $display->wholesale_price_ht * $display->cart_quantity * ((float) $display->vat_rate / 100)), 2);
-        $itemCount = $displays->sum('cart_quantity');
+        $products = ProfessionalProduct::whereIn('id', array_keys($cart['products']))->where('active', true)->orderBy('name')->get();
+        $products->each(fn ($product) => $product->cart_quantity = (int) $cart['products'][$product->id]);
 
-        return compact('displays', 'subtotalHt', 'vatAmount', 'itemCount') + ['totalTtc' => round($subtotalHt + $vatAmount, 2)];
+        $displaySubtotal = $displays->sum(fn ($display) => (float) $display->wholesale_price_ht * $display->cart_quantity);
+        $productSubtotal = $products->sum(fn ($product) => (float) $product->wholesale_price_ht * $product->cart_quantity);
+        $displayVat = $displays->sum(fn ($display) => (float) $display->wholesale_price_ht * $display->cart_quantity * ((float) $display->vat_rate / 100));
+        $productVat = $productSubtotal * (self::VAT_RATE / 100);
+        $subtotalHt = round($displaySubtotal + $productSubtotal, 2);
+        $vatAmount = round($displayVat + $productVat, 2);
+        $itemCount = $displays->sum('cart_quantity') + $products->sum('cart_quantity');
+
+        return compact('displays', 'products', 'subtotalHt', 'vatAmount', 'itemCount') + [
+            'totalTtc' => round($subtotalHt + $vatAmount, 2),
+            'vatRate' => self::VAT_RATE,
+        ];
     }
 }

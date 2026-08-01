@@ -2,14 +2,14 @@
 @section('title', 'Catalogue grossiste - AchatHub Pro')
 @section('pro-content')
 <div class="pro-page-head">
-    <div><span class="badge text-bg-success mb-2">Compte professionnel validé</span><h1>Catalogue professionnel</h1><p>Consultez les références disponibles et transmettez une précommande à notre équipe.</p></div>
+    <div><span class="badge text-bg-success mb-2">Compte professionnel validé</span><h1>Catalogue professionnel</h1><p>Commandez directement les références en gros aux tarifs revendeurs HT.</p></div>
     <a class="btn btn-outline-dark d-none d-md-inline-flex" href="{{ route('pro.displays') }}"><i class="bi bi-box-seam me-2"></i>Voir les présentoirs complets</a>
 </div>
 
 <div class="pro-steps">
     <div class="pro-step"><b>1</b><span><strong>Consultez le catalogue</strong>Découvrez les références et leurs tarifs indicatifs HT.</span></div>
-    <div class="pro-step"><b>2</b><span><strong>Précommandez un produit</strong>Un seul clic transmet votre demande sans engagement.</span></div>
-    <div class="pro-step"><b>3</b><span><strong>Définissons l’offre ensemble</strong>Notre équipe confirme volume, délai et prix final.</span></div>
+    <div class="pro-step"><b>2</b><span><strong>Choisissez vos quantités</strong>Respectez le minimum indiqué pour chaque référence.</span></div>
+    <div class="pro-step"><b>3</b><span><strong>Commandez en ligne</strong>Le stock est réservé et votre facture est disponible dans le compte Pro.</span></div>
 </div>
 
 <nav class="pro-category-strip" aria-label="Catégories professionnelles">
@@ -28,9 +28,13 @@
         <div class="pro-product-body">
             <div class="pro-product-meta">{{ $product->category }} · {{ $product->sku }}</div>
             <h2>{{ $product->name }}</h2>
-            <div class="pro-product-price">{{ number_format($product->wholesale_price_ht,2,',',' ') }} € <small>HT indicatif</small></div>
-            <div class="pro-product-min">Précommande en gros · Offre finale confirmée par notre équipe</div>
-            <form class="pro-preorder-form" method="post" action="{{ route('pro.products.preorder',$product) }}">@csrf<button><i class="bi bi-send me-2"></i>Précommander</button></form>
+            <div class="pro-product-price">{{ number_format($product->wholesale_price_ht,2,',',' ') }} € <small>HT / unité</small></div>
+            <div class="pro-product-min">Minimum {{ $product->minimum_order_quantity }} unités · Stock {{ $product->stock }}</div>
+            @if($product->stock >= $product->minimum_order_quantity)
+            <form class="pro-preorder-form d-flex gap-2" method="post" action="{{ route('pro.cart.products.add',$product) }}">@csrf<input class="form-control" style="max-width:90px" type="number" name="quantity" value="{{ $product->minimum_order_quantity }}" min="{{ $product->minimum_order_quantity }}" max="{{ $product->stock }}" aria-label="Quantité de {{ $product->name }}"><button class="flex-grow-1"><i class="bi bi-cart-plus me-2"></i>Ajouter</button></form>
+            @else
+            <form class="pro-preorder-form" method="post" action="{{ route('pro.products.preorder',$product) }}">@csrf<button><i class="bi bi-send me-2"></i>Précommander le réassort</button></form>
+            @endif
         </div>
     </article>
 @empty

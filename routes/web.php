@@ -117,6 +117,9 @@ Route::prefix('pro')->name('pro.')->middleware(['auth', 'reseller'])->group(func
     Route::post('/panier/presentoirs/{display}', [ProfessionalStoreController::class, 'addDisplay'])->name('cart.add');
     Route::patch('/panier/presentoirs/{display}', [ProfessionalStoreController::class, 'updateDisplay'])->name('cart.update');
     Route::delete('/panier/presentoirs/{display}', [ProfessionalStoreController::class, 'removeDisplay'])->name('cart.remove');
+    Route::post('/panier/produits/{product}', [ProfessionalStoreController::class, 'addProduct'])->name('cart.products.add');
+    Route::patch('/panier/produits/{product}', [ProfessionalStoreController::class, 'updateProduct'])->name('cart.products.update');
+    Route::delete('/panier/produits/{product}', [ProfessionalStoreController::class, 'removeProduct'])->name('cart.products.remove');
     Route::post('/precommandes/{product}', [ProfessionalStoreController::class, 'preorder'])->name('products.preorder');
     Route::delete('/precommandes/{professionalPreorder}', [ProfessionalStoreController::class, 'destroyPreorder'])->name('preorders.destroy');
     Route::get('/commande', [ProfessionalStoreController::class, 'checkout'])->name('checkout');
@@ -153,6 +156,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/revendeurs', [AdminController::class, 'resellers'])->name('resellers');
     Route::patch('/revendeurs/{resellerRequest}', [AdminController::class, 'reviewReseller'])->name('resellers.review');
     Route::patch('/presentoirs/{display}', [AdminController::class, 'updateDisplay'])->name('displays.update');
+    Route::patch('/produits-pro/{professionalProduct}', [AdminController::class, 'updateProfessionalProduct'])->name('professional-products.update');
     Route::patch('/commandes-pro/{professionalOrder}', [AdminController::class, 'updateProfessionalOrder'])->name('professional-orders.update');
     Route::patch('/precommandes-pro/{professionalPreorder}', [AdminController::class, 'updateProfessionalPreorder'])->name('professional-preorders.update');
     Route::get('/fournisseur', [AdminSupplierController::class, 'index'])->name('supplier.index');

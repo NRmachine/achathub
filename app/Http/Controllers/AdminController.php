@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProfessionalDisplay;
 use App\Models\ProfessionalOrder;
 use App\Models\ProfessionalPreorder;
+use App\Models\ProfessionalProduct;
 use App\Models\ResellerRequest;
 use App\Models\SupportMessage;
 use App\Models\User;
@@ -174,13 +175,22 @@ class AdminController extends Controller
         return back()->with('success', 'Message marqué comme traité.');
     }
 
-    public function resellers()
+    public function resellers(Request $request)
     {
         return view('admin.resellers', [
             'requests' => ResellerRequest::with(['user', 'reviewer'])->latest()->paginate(25),
             'displays' => ProfessionalDisplay::withCount('products')->orderBy('sort_order')->get(),
             'orders' => ProfessionalOrder::with(['user', 'items'])->latest()->limit(30)->get(),
             'preorders' => ProfessionalPreorder::with(['user', 'product'])->latest()->limit(50)->get(),
+            'professionalProducts' => ProfessionalProduct::query()
+                ->when($request->pro_q, fn ($query, $value) => $query->where(fn ($search) => $search
+                    ->where('name', 'like', "%{$value}%")
+                    ->orWhere('sku', 'like', "%{$value}%")
+                    ->orWhere('category', 'like', "%{$value}%")))
+                ->orderBy('category')
+                ->orderBy('name')
+                ->paginate(25, ['*'], 'pro_products_page')
+                ->withQueryString(),
         ]);
     }
 
@@ -211,6 +221,20 @@ class AdminController extends Controller
         $display->update(['wholesale_price_ht' => $data['wholesale_price_ht'], 'active' => $request->boolean('active')]);
 
         return back()->with('success', 'Offre professionnelle mise à jour.');
+    }
+
+    public function updateProfessionalProduct(Request $request, ProfessionalProduct $professionalProduct)
+    {
+        $data = $request->validate([
+            'category' => ['required', 'string', 'max:120'],
+            'wholesale_price_ht' => ['required', 'numeric', 'min:0'],
+            'minimum_order_quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'stock' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+        $professionalProduct->update($data + ['active' => $request->boolean('active')]);
+
+        return back()->with('success', 'Produit professionnel mis à jour.');
     }
 
     public function updateProfessionalOrder(Request $request, ProfessionalOrder $professionalOrder, TransactionalMailer $mailer)

@@ -2,16 +2,66 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
+use App\Models\ProfessionalDisplay;
+use App\Models\ProfessionalProduct;
 use App\Models\SupplierSyncRun;
+use App\Models\User;
 use App\Services\Suppliers\SupplierCatalogService;
 use App\Services\Suppliers\SupplierSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
+use Illuminate\Support\Facades\Hash;
 use Mockery;
 use Tests\TestCase;
 
 class VercelRuntimeTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_production_catalog_can_be_bootstrapped_without_overwriting_later_changes(): void
+    {
+        $this->artisan('achathub:bootstrap-catalog')->assertSuccessful();
+
+        $this->assertSame(30, Product::query()->count());
+        $this->assertSame(47, ProfessionalProduct::query()->count());
+        $this->assertSame(3, ProfessionalDisplay::query()->count());
+
+        $product = Product::query()->firstOrFail();
+        $product->update(['price' => 123.45]);
+
+        $this->artisan('achathub:bootstrap-catalog')->assertSuccessful();
+
+        $this->assertSame('123.45', $product->fresh()->price);
+    }
+
+    public function test_vercel_boot_migrates_catalogs_and_creates_the_initial_administrator_once(): void
+    {
+        $environment = Env::getRepository();
+        $environment->set('VERCEL_RUN_MIGRATIONS', 'true');
+        $environment->set('ACHATHUB_ADMIN_EMAIL', 'contact@example.com');
+        $environment->set('ACHATHUB_ADMIN_PASSWORD', 'Initial-password-123!');
+
+        try {
+            $this->artisan('achathub:vercel-boot')->assertSuccessful();
+
+            $administrator = User::query()->where('email', 'contact@example.com')->firstOrFail();
+            $this->assertSame('admin', $administrator->role);
+            $this->assertTrue($administrator->hasVerifiedEmail());
+            $this->assertTrue(Hash::check('Initial-password-123!', $administrator->password));
+
+            $administrator->update(['password' => 'Password-changed-later!']);
+            $environment->set('ACHATHUB_ADMIN_PASSWORD', 'Another-environment-password!');
+
+            $this->artisan('achathub:vercel-boot')->assertSuccessful();
+
+            $this->assertTrue(Hash::check('Password-changed-later!', $administrator->fresh()->password));
+        } finally {
+            foreach (['VERCEL_RUN_MIGRATIONS', 'ACHATHUB_ADMIN_EMAIL', 'ACHATHUB_ADMIN_PASSWORD'] as $key) {
+                $environment->clear($key);
+            }
+        }
+    }
 
     public function test_supplier_cron_rejects_requests_without_the_vercel_secret(): void
     {
