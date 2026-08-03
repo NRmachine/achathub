@@ -8,7 +8,6 @@ RUN composer install \
     --no-progress \
     --prefer-dist \
     --optimize-autoloader \
-    --classmap-authoritative \
     --no-scripts
 
 FROM php:8.4-cli-alpine
