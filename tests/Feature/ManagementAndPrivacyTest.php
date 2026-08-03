@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Conversation;
+use App\Models\SupportMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -60,8 +61,61 @@ class ManagementAndPrivacyTest extends TestCase
 
     public function test_cookie_choice_and_legal_pages_are_available(): void
     {
-        $this->get(route('legal.privacy'))->assertOk()->assertSee('Politique de confidentialité');
-        $this->get(route('legal.terms'))->assertOk()->assertSee('Conditions générales');
+        $this->get(route('legal.privacy'))
+            ->assertOk()
+            ->assertSee('Politique de confidentialité')
+            ->assertSee('Durées de conservation')
+            ->assertSee('CNIL');
+        $this->get(route('legal.terms'))
+            ->assertOk()
+            ->assertSee('Conditions générales')
+            ->assertSee('Formulaire type de rétractation')
+            ->assertSee('Médiateur à désigner');
+        $this->get(route('legal.notice'))
+            ->assertOk()
+            ->assertSee('Informations à finaliser');
         $this->post(route('cookies.consent'), ['choice' => 'refused'])->assertCookie('cookie_consent', 'refused');
+    }
+
+    public function test_security_headers_are_added_to_public_and_private_pages(): void
+    {
+        $this->get(route('legal.privacy'))
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+            ->assertHeader('Content-Security-Policy');
+
+        $customer = User::factory()->create(['role' => 'customer']);
+        $this->actingAs($customer)->get(route('data-rights.index'))
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_user_can_request_limitation_of_processing(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        $this->actingAs($customer)->post(route('data-rights.store'), [
+            'type' => 'Limitation',
+            'message' => 'Veuillez geler temporairement les traitements non obligatoires.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('data_rights_requests', [
+            'user_id' => $customer->id,
+            'type' => 'Limitation',
+        ]);
+    }
+
+    public function test_support_honeypot_rejects_automated_submission(): void
+    {
+        $this->post(route('support.store'), [
+            'name' => 'Robot',
+            'email' => 'robot@example.test',
+            'subject' => 'Spam',
+            'message' => 'Contenu indésirable',
+            'website' => 'https://spam.example',
+        ])->assertSessionHasErrors('website');
+
+        $this->assertSame(0, SupportMessage::query()->count());
     }
 }

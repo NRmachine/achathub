@@ -18,7 +18,7 @@ class DataRightsController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'type' => ['required', 'in:Accès,Rectification,Suppression,Opposition,Portabilité'],
+            'type' => ['required', 'in:Accès,Rectification,Suppression,Limitation,Opposition,Portabilité'],
             'message' => ['nullable', 'string', 'max:3000'],
         ]);
         $request->user()->dataRightsRequests()->create($data);

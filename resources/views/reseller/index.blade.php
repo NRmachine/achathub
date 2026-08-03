@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Devenir revendeur AchatHub')
+@section('title', 'Devenir revendeur : présentoirs et achat en gros | AchatHub')
+@section('meta_description', 'Découvrez les offres AchatHub pour revendeurs : présentoirs prêts à vendre, produits en gros, tarifs professionnels HT, commandes et factures en ligne.')
 @section('content')
 <section class="bg-dark text-white py-5">
     <div class="container py-lg-4">

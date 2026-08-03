@@ -24,7 +24,14 @@ class SupportController extends Controller
             $conversation->update(['status' => 'Ouverte', 'last_message_at' => now(), 'admin_read_at' => null]);
             return redirect()->route('messages.index')->with('success', 'Message envoyé.');
         }
-        $data = $request->validate(['name' => ['required', 'max:120'], 'email' => ['required', 'email'], 'subject' => ['required', 'max:160'], 'message' => ['required', 'max:3000']]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email:rfc', 'max:160'],
+            'subject' => ['required', 'string', 'max:160'],
+            'message' => ['required', 'string', 'max:3000'],
+            'website' => ['prohibited'],
+        ]);
+        unset($data['website']);
         SupportMessage::create([...$data, 'user_id' => $request->user()?->id]);
 
         return back()->with('success', 'Votre message a bien été transmis au support.');

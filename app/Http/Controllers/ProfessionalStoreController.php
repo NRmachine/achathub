@@ -18,11 +18,32 @@ class ProfessionalStoreController extends Controller
     public function index(Request $request)
     {
         $products = ProfessionalProduct::query()
+            ->withCount(['displays' => fn ($query) => $query->where('active', true)])
             ->where('active', true)
-            ->when($request->q, fn ($query, $value) => $query->where(fn ($search) => $search->where('name', 'like', "%{$value}%")->orWhere('sku', 'like', "%{$value}%")))
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $terms = collect(preg_split('/\s+/', trim($request->string('q'))))->filter()->take(8);
+                foreach ($terms as $term) {
+                    $escaped = '%'.addcslashes($term, '%_\\').'%';
+                    $query->where(fn ($search) => $search
+                        ->where('name', 'like', $escaped)
+                        ->orWhere('sku', 'like', $escaped)
+                        ->orWhere('category', 'like', $escaped)
+                        ->orWhere('description', 'like', $escaped));
+                }
+            })
             ->when($request->category, fn ($query, $value) => $query->where('category', $value))
-            ->orderBy('category')
-            ->orderBy('name')
+            ->when($request->availability === 'available', fn ($query) => $query->whereColumn('stock', '>=', 'minimum_order_quantity'))
+            ->when($request->availability === 'preorder', fn ($query) => $query->whereColumn('stock', '<', 'minimum_order_quantity'));
+
+        match ($request->string('sort')->toString()) {
+            'price_asc' => $products->orderBy('wholesale_price_ht')->orderBy('name'),
+            'price_desc' => $products->orderByDesc('wholesale_price_ht')->orderBy('name'),
+            'stock_desc' => $products->orderByDesc('stock')->orderBy('name'),
+            'minimum_asc' => $products->orderBy('minimum_order_quantity')->orderBy('name'),
+            default => $products->orderBy('category')->orderBy('name'),
+        };
+
+        $products = $products
             ->paginate(16)
             ->withQueryString();
 
@@ -54,7 +75,14 @@ class ProfessionalStoreController extends Controller
 
     public function displays()
     {
-        return view('professional.displays', ['displays' => ProfessionalDisplay::withCount('products')->where('active', true)->orderBy('sort_order')->get()]);
+        return view('professional.displays', [
+            'displays' => ProfessionalDisplay::query()
+                ->withCount('products')
+                ->withSum('items as units_count', 'quantity')
+                ->where('active', true)
+                ->orderBy('sort_order')
+                ->get(),
+        ]);
     }
 
     public function show(ProfessionalDisplay $display)
@@ -65,20 +93,40 @@ class ProfessionalStoreController extends Controller
         return view('professional.show', compact('display'));
     }
 
+    public function showProduct(ProfessionalProduct $product)
+    {
+        abort_unless($product->active, 404);
+        $product->load(['displays' => fn ($query) => $query->where('active', true)->orderBy('sort_order')]);
+        $relatedProducts = ProfessionalProduct::query()
+            ->where('active', true)
+            ->where('category', $product->category)
+            ->whereKeyNot($product->id)
+            ->withCount(['displays' => fn ($query) => $query->where('active', true)])
+            ->orderByDesc('stock')
+            ->orderBy('name')
+            ->limit(4)
+            ->get();
+
+        return view('professional.product', compact('product', 'relatedProducts'));
+    }
+
     public function account(Request $request)
     {
         $ordersQuery = $request->user()->professionalOrders();
+        $orders = (clone $ordersQuery)->with('items')->latest()->paginate(20);
 
         return view('professional.account', [
             'application' => $request->user()->resellerRequest,
-            'orders' => (clone $ordersQuery)->with('items')->latest()->paginate(20),
+            'orders' => $orders,
             'preorders' => $request->user()->professionalPreorders()->with('product')->latest()->limit(30)->get(),
             'stats' => [
                 'orders' => (clone $ordersQuery)->count(),
                 'pending' => (clone $ordersQuery)->whereNotIn('status', ['Livrée', 'Annulée'])->count(),
+                'pending_value' => (float) (clone $ordersQuery)->whereNotIn('status', ['Livrée', 'Annulée'])->sum('total_ttc'),
                 'paid' => (float) (clone $ordersQuery)->where('payment_status', 'Payé')->sum('total_ttc'),
                 'preorders' => $request->user()->professionalPreorders()->whereIn('status', ['Nouvelle', 'En cours', 'Validée'])->count(),
             ],
+            'latestOrder' => $orders->getCollection()->first(),
         ]);
     }
 

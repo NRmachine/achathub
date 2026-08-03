@@ -22,4 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
         button.querySelector('span').textContent = 'Validation en cours...';
     });
     refresh();
+    const errorSummary = document.querySelector('#checkout-error-summary');
+    if (errorSummary) errorSummary.focus();
 });

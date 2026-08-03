@@ -18,6 +18,7 @@ use App\Http\Controllers\ProfessionalRegistrationController;
 use App\Http\Controllers\ProfessionalStoreController;
 use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\ReturnController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SupplierCronController;
@@ -31,6 +32,7 @@ Route::get('/internal/cron/fournisseur', SupplierCronController::class)
     ->name('internal.cron.supplier');
 
 Route::get('/', [StoreController::class, 'index'])->name('home');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/produits/{product}', [StoreController::class, 'show'])->name('products.show');
 Route::get('/panier', [CartController::class, 'index'])->name('cart.index');
 Route::post('/panier/{product}', [CartController::class, 'add'])->name('cart.add');
@@ -38,15 +40,15 @@ Route::post('/acheter/{product}', [CartController::class, 'buyNow'])->name('cart
 Route::patch('/panier/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/panier/{product}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/support', [SupportController::class, 'index'])->name('support.index');
-Route::post('/support', [SupportController::class, 'store'])->name('support.store');
+Route::post('/support', [SupportController::class, 'store'])->middleware('throttle:6,1')->name('support.store');
 Route::get('/devenir-revendeur', [ResellerController::class, 'index'])->name('reseller.index');
 Route::get('/conditions-generales', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/confidentialite', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
 Route::get('/mentions-legales', [LegalController::class, 'notice'])->name('legal.notice');
-Route::post('/cookies/consentement', [LegalController::class, 'consent'])->name('cookies.consent');
+Route::post('/cookies/consentement', [LegalController::class, 'consent'])->middleware('throttle:20,1')->name('cookies.consent');
 Route::get('/commande', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/commande', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/commande', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/commande/suivi/{order:access_token}', [CheckoutController::class, 'guestShow'])->name('orders.guest.show');
 
 Route::middleware('guest')->group(function () {
@@ -57,13 +59,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/administration/connexion', [AuthController::class, 'adminLoginForm'])->name('admin.login');
     Route::post('/administration/connexion', [AuthController::class, 'adminLogin'])->middleware('throttle:5,1')->name('admin.login.store');
     Route::get('/inscription', [AuthController::class, 'registerForm'])->name('register');
-    Route::post('/inscription', [AuthController::class, 'register'])->name('register.store');
+    Route::post('/inscription', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.store');
     Route::get('/inscription-professionnelle', [ProfessionalRegistrationController::class, 'create'])->name('professional.register');
-    Route::post('/inscription-professionnelle', [ProfessionalRegistrationController::class, 'store'])->name('professional.register.store');
+    Route::post('/inscription-professionnelle', [ProfessionalRegistrationController::class, 'store'])->middleware('throttle:3,1')->name('professional.register.store');
     Route::get('/mot-de-passe-oublie', [AuthController::class, 'forgotPasswordForm'])->name('password.request');
     Route::post('/mot-de-passe-oublie', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('password.email');
     Route::get('/reinitialiser-mot-de-passe/{token}', [AuthController::class, 'resetPasswordForm'])->name('password.reset');
-    Route::post('/reinitialiser-mot-de-passe', [AuthController::class, 'resetPassword'])->name('password.update');
+    Route::post('/reinitialiser-mot-de-passe', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.update');
 });
 Route::post('/deconnexion', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
@@ -84,10 +86,10 @@ Route::middleware('auth')->group(function () {
     })->middleware('throttle:6,1')->name('verification.send');
 
     Route::get('/messagerie', [ConversationController::class, 'index'])->name('messages.index');
-    Route::post('/messagerie', [ConversationController::class, 'store'])->name('messages.store');
+    Route::post('/messagerie', [ConversationController::class, 'store'])->middleware('throttle:15,1')->name('messages.store');
     Route::get('/mes-donnees', [DataRightsController::class, 'index'])->name('data-rights.index');
-    Route::post('/mes-donnees', [DataRightsController::class, 'store'])->name('data-rights.store');
-    Route::post('/devenir-revendeur', [ResellerController::class, 'store'])->name('reseller.store');
+    Route::post('/mes-donnees', [DataRightsController::class, 'store'])->middleware('throttle:3,1')->name('data-rights.store');
+    Route::post('/devenir-revendeur', [ResellerController::class, 'store'])->middleware('throttle:3,1')->name('reseller.store');
     Route::get('/espace-revendeur', [ResellerController::class, 'dashboard'])->name('reseller.dashboard');
 
     Route::middleware('customer.portal')->group(function () {
@@ -100,7 +102,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mon-compte/retours/{productReturn}', [ReturnController::class, 'show'])->name('account.returns.show');
         Route::get('/mon-compte/favoris', [AccountController::class, 'wishlist'])->name('account.wishlist');
         Route::post('/favoris/{product}', [AccountController::class, 'toggleWishlist'])->name('wishlist.toggle');
-        Route::post('/produits/{product}/avis', [ProductReviewController::class, 'store'])->name('products.reviews.store');
+        Route::post('/produits/{product}/avis', [ProductReviewController::class, 'store'])->middleware('throttle:6,1')->name('products.reviews.store');
         Route::get('/mon-compte/parametres', [AccountController::class, 'settings'])->name('account.settings');
         Route::patch('/mon-compte/parametres', [AccountController::class, 'update'])->name('account.update');
     });
@@ -108,6 +110,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('pro')->name('pro.')->middleware(['auth', 'reseller'])->group(function () {
     Route::get('/', [ProfessionalStoreController::class, 'index'])->name('index');
+    Route::get('/produits/{product}', [ProfessionalStoreController::class, 'showProduct'])->name('products.show');
     Route::get('/presentoirs', [ProfessionalStoreController::class, 'displays'])->name('displays');
     Route::get('/presentoirs/{display:slug}', [ProfessionalStoreController::class, 'show'])->name('show');
     Route::get('/compte', [ProfessionalStoreController::class, 'account'])->name('account');

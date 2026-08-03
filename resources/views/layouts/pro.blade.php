@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AchatHub Pro')</title>
     <meta name="description" content="Espace professionnel AchatHub pour commander des produits grossistes et des présentoirs prêts à vendre.">
+    <meta name="robots" content="noindex,follow">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -17,7 +18,9 @@
 <body>
 @php
     $proCart = session('professional_cart', []);
-    $proCartCount = collect($proCart['displays'] ?? (isset($proCart['products']) ? [] : $proCart))->sum();
+    $proCartCount = isset($proCart['displays']) || isset($proCart['products'])
+        ? collect($proCart['displays'] ?? [])->sum() + collect($proCart['products'] ?? [])->sum()
+        : collect($proCart)->sum();
     $proLinks = [
         ['route' => 'pro.index', 'label' => 'Produits grossistes', 'icon' => 'bi-grid'],
         ['route' => 'pro.displays', 'label' => 'Présentoirs complets', 'icon' => 'bi-box-seam'],
@@ -57,7 +60,7 @@
     <div class="offcanvas-body d-flex flex-column">
         <nav class="pro-mobile-menu-links" aria-label="Menu du compte professionnel">
             @foreach($proLinks as $link)
-                <a class="{{ request()->routeIs($link['route']) ? 'active' : '' }}" href="{{ route($link['route']) }}"><i class="bi {{ $link['icon'] }}"></i><span>{{ $link['label'] }}</span><i class="bi bi-chevron-right ms-auto"></i></a>
+                <a class="{{ request()->routeIs($link['route']) || ($link['route'] === 'pro.index' && request()->routeIs('pro.products.*')) ? 'active' : '' }}" href="{{ route($link['route']) }}"><i class="bi {{ $link['icon'] }}"></i><span>{{ $link['label'] }}</span><i class="bi bi-chevron-right ms-auto"></i></a>
             @endforeach
         </nav>
         <div class="mt-auto pt-3 border-top">
@@ -72,7 +75,7 @@
         <div class="pro-business"><small>ESPACE VALIDÉ</small><strong>{{ auth()->user()->resellerRequest?->business_name }}</strong><span>Tarifs professionnels HT</span></div>
         <nav aria-label="Navigation professionnelle">
             @foreach($proLinks as $link)
-                <a class="{{ request()->routeIs($link['route']) ? 'active' : '' }}" href="{{ route($link['route']) }}"><i class="bi {{ $link['icon'] }}"></i>{{ $link['label'] }}</a>
+                <a class="{{ request()->routeIs($link['route']) || ($link['route'] === 'pro.index' && request()->routeIs('pro.products.*')) ? 'active' : '' }}" href="{{ route($link['route']) }}"><i class="bi {{ $link['icon'] }}"></i>{{ $link['label'] }}</a>
             @endforeach
         </nav>
         <div class="mt-auto">
@@ -90,7 +93,7 @@
 </div>
 
 <nav class="pro-mobile-nav d-lg-none" aria-label="Navigation professionnelle mobile">
-    <a class="{{ request()->routeIs('pro.index') ? 'active' : '' }}" href="{{ route('pro.index') }}"><i class="bi bi-grid"></i><span>Produits</span></a>
+    <a class="{{ request()->routeIs('pro.index') || request()->routeIs('pro.products.*') ? 'active' : '' }}" href="{{ route('pro.index') }}"><i class="bi bi-grid"></i><span>Produits</span></a>
     <a class="{{ request()->routeIs('pro.displays') || request()->routeIs('pro.show') ? 'active' : '' }}" href="{{ route('pro.displays') }}"><i class="bi bi-box-seam"></i><span>Présentoirs</span></a>
     <a class="{{ request()->routeIs('pro.cart') || request()->routeIs('pro.checkout') ? 'active' : '' }}" href="{{ route('pro.cart') }}"><i class="bi bi-cart3"></i><span>Panier</span>@if($proCartCount)<b>{{ $proCartCount }}</b>@endif</a>
     <button type="button" data-bs-toggle="offcanvas" data-bs-target="#proMobileMenu" aria-controls="proMobileMenu"><i class="bi bi-list"></i><span>Menu</span></button>

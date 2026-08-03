@@ -3,6 +3,7 @@
 @section('pro-content')
 <div class="pro-page-head">
     <div><span class="badge text-bg-success mb-2">Compte professionnel actif</span><h1>{{ $application->business_name }}</h1><p>{{ $application->formula }} · {{ $application->city }} · Client depuis le {{ $application->approved_at?->format('d/m/Y') }}</p></div>
+    <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-dark" href="{{ route('pro.displays') }}"><i class="bi bi-box-seam me-1"></i> Choisir un présentoir</a><a class="btn btn-dark" href="{{ route('pro.index') }}"><i class="bi bi-cart-plus me-1"></i> Commander des produits</a></div>
 </div>
 
 @unless(auth()->user()->hasVerifiedEmail())
@@ -13,11 +14,22 @@
 @endunless
 
 <div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3"><div class="bg-white border p-3 h-100"><small class="text-secondary">COMMANDES PRO</small><strong class="d-block fs-2">{{ $stats['orders'] }}</strong></div></div>
-    <div class="col-6 col-xl-3"><div class="bg-white border p-3 h-100"><small class="text-secondary">EN COURS</small><strong class="d-block fs-2">{{ $stats['pending'] }}</strong></div></div>
-    <div class="col-6 col-xl-3"><div class="bg-white border p-3 h-100"><small class="text-secondary">TOTAL PAYÉ TTC</small><strong class="d-block fs-2">{{ number_format($stats['paid'],2,',',' ') }} €</strong></div></div>
-    <div class="col-6 col-xl-3"><div class="bg-white border p-3 h-100"><small class="text-secondary">PRÉCOMMANDES ACTIVES</small><strong class="d-block fs-2">{{ $stats['preorders'] }}</strong></div></div>
+    <div class="col-6 col-xl"><div class="bg-white border p-3 h-100"><small class="text-secondary">COMMANDES PRO</small><strong class="d-block fs-2">{{ $stats['orders'] }}</strong></div></div>
+    <div class="col-6 col-xl"><div class="bg-white border p-3 h-100"><small class="text-secondary">EN COURS</small><strong class="d-block fs-2">{{ $stats['pending'] }}</strong></div></div>
+    <div class="col-6 col-xl"><div class="bg-white border p-3 h-100"><small class="text-secondary">MONTANT EN COURS TTC</small><strong class="d-block fs-2">{{ number_format($stats['pending_value'],2,',',' ') }} €</strong></div></div>
+    <div class="col-6 col-xl"><div class="bg-white border p-3 h-100"><small class="text-secondary">TOTAL PAYÉ TTC</small><strong class="d-block fs-2">{{ number_format($stats['paid'],2,',',' ') }} €</strong></div></div>
+    <div class="col-6 col-xl"><div class="bg-white border p-3 h-100"><small class="text-secondary">PRÉCOMMANDES ACTIVES</small><strong class="d-block fs-2">{{ $stats['preorders'] }}</strong></div></div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><a class="d-flex align-items-center gap-3 bg-white border rounded p-3 h-100 text-dark text-decoration-none" href="{{ route('pro.index', ['availability' => 'available']) }}"><i class="bi bi-grid fs-3 text-success"></i><span><strong class="d-block">Réapprovisionner mon stock</strong><small class="text-secondary">Voir les références commandables</small></span><i class="bi bi-chevron-right ms-auto"></i></a></div>
+    <div class="col-md-4"><a class="d-flex align-items-center gap-3 bg-white border rounded p-3 h-100 text-dark text-decoration-none" href="{{ route('pro.displays') }}"><i class="bi bi-shop-window fs-3 text-success"></i><span><strong class="d-block">Développer mon offre</strong><small class="text-secondary">Comparer les présentoirs complets</small></span><i class="bi bi-chevron-right ms-auto"></i></a></div>
+    <div class="col-md-4"><a class="d-flex align-items-center gap-3 bg-white border rounded p-3 h-100 text-dark text-decoration-none" href="{{ route('messages.index') }}"><i class="bi bi-chat-dots fs-3 text-success"></i><span><strong class="d-block">Parler au service commercial</strong><small class="text-secondary">Question produit, volume ou réassort</small></span><i class="bi bi-chevron-right ms-auto"></i></a></div>
+</div>
+
+@if($latestOrder)
+<div class="alert alert-light border d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><span><small class="text-secondary d-block">DERNIÈRE COMMANDE</small><strong>{{ $latestOrder->number }}</strong> · {{ $latestOrder->status }} · {{ number_format($latestOrder->total_ttc,2,',',' ') }} € TTC</span><a class="btn btn-sm btn-outline-dark" target="_blank" href="{{ route('pro.invoice', $latestOrder) }}"><i class="bi bi-receipt me-1"></i>Ouvrir la facture</a></div>
+@endif
 
 <div class="row g-3 mb-4">
     <div class="col-md-4"><div class="bg-white border p-3 h-100"><small class="text-secondary">RESPONSABLE</small><strong class="d-block mt-1">{{ $application->manager_name }}</strong><span>{{ $application->phone }}</span></div></div>

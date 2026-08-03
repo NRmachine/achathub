@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DataRightsRequest;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AdminSettingsController extends Controller
 {
@@ -16,9 +17,22 @@ class AdminSettingsController extends Controller
     public function update(Request $request)
     {
         $data = $request->validate(['settings' => ['required', 'array'], 'settings.*' => ['nullable', 'string', 'max:5000']]);
+        $settings = SiteSetting::query()->whereIn('key', array_keys($data['settings']))->get()->keyBy('key');
+
         foreach ($data['settings'] as $key => $value) {
-            SiteSetting::where('key', $key)->update(['value' => $value]);
+            $setting = $settings->get($key);
+            if (! $setting) {
+                throw ValidationException::withMessages(["settings.$key" => 'Ce réglage n’est pas autorisé.']);
+            }
+
+            $validated = validator(
+                ['value' => $value],
+                ['value' => ['nullable', $setting->type === 'email' ? 'email:rfc' : ($setting->type === 'url' ? 'url:http,https' : 'string'), 'max:5000']],
+            )->validate();
+
+            $setting->update(['value' => $validated['value'] ?? null]);
         }
+
         return back()->with('success', 'Contenus et informations légales mis à jour.');
     }
 

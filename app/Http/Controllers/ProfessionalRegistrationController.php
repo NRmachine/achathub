@@ -64,7 +64,7 @@ class ProfessionalRegistrationController extends Controller
                 'password' => Hash::make($data['password']),
                 'role' => 'customer',
                 'terms_accepted_at' => now(),
-                'privacy_version' => '2026-07-15',
+                'privacy_version' => '2026-08-03',
             ]);
 
             ResellerRequest::create([

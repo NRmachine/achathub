@@ -1,5 +1,13 @@
 @extends('layouts.app')
-@section('title', request('q') ? 'Recherche '.request('q').' - AchatHub' : 'AchatHub - Boutique en ligne')
+@section('title', $catalogSeo['title'])
+@section('meta_description', $catalogSeo['description'])
+@section('canonical', $catalogSeo['canonical'])
+@section('robots', $catalogSeo['robots'])
+@if($catalogSeo['previous']) @section('previous_url', $catalogSeo['previous']) @endif
+@if($catalogSeo['next']) @section('next_url', $catalogSeo['next']) @endif
+@if($catalogBreadcrumbData && !str_contains($catalogSeo['robots'], 'noindex'))
+    @push('structured-data')<x-structured-data :data="$catalogBreadcrumbData" />@endpush
+@endif
 @section('content')
 @if(!request()->hasAny(['q','category','family','subcategory','brand','min_price','max_price','sort','page']))
 <section class="hero"><div class="container"><span class="badge text-bg-light mb-3">Nouveautés et prix promotionnels</span><h1>{{ $heroTitle }}</h1><p class="lead col-lg-6 mt-3">{{ $heroText }}</p><a href="#catalogue" class="btn btn-ah btn-lg mt-2">Voir le catalogue</a><a href="{{ route('reseller.index') }}" class="btn btn-outline-light btn-lg mt-2 ms-sm-2">Solutions professionnelles</a></div></section>

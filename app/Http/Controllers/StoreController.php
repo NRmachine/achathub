@@ -7,8 +7,10 @@ use App\Models\Product;
 use App\Models\SiteSetting;
 use App\Services\StorefrontNavigation;
 use App\Support\OptimizedAsset;
+use App\Support\Seo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class StoreController extends Controller
 {
@@ -88,6 +90,24 @@ class StoreController extends Controller
             ],
         );
 
+        $catalogSeo = Seo::catalog($request, $selectedCategory, $products);
+        $catalogBreadcrumbItems = [['name' => 'Accueil', 'url' => '/']];
+        if ($selectedCategory?->parent) {
+            $catalogBreadcrumbItems[] = [
+                'name' => $selectedCategory->parent->name,
+                'url' => '/?'.http_build_query(['category' => $selectedCategory->parent->slug]),
+            ];
+        }
+        if ($selectedCategory) {
+            $catalogBreadcrumbItems[] = [
+                'name' => $selectedCategory->name,
+                'url' => '/?'.http_build_query(['category' => $selectedCategory->slug]),
+            ];
+        }
+        $catalogBreadcrumbData = count($catalogBreadcrumbItems) > 1
+            ? Seo::breadcrumbs($catalogBreadcrumbItems)
+            : null;
+
         return view('store.index', [
             'products' => $products,
             'categories' => $categories->sortByDesc('products_count')->values(),
@@ -97,6 +117,8 @@ class StoreController extends Controller
             'heroTitle' => $metadata['settings']['hero_title'] ?? 'Tout acheter, au meilleur prix.',
             'heroText' => $metadata['settings']['hero_text'] ?? 'Téléphonie, accessoires, pièces détachées et équipements sélectionnés.',
             'catalogTitle' => $request->family ?: ($request->subcategory ?: ($selectedCategory?->name ?: 'Découvrez nos produits')),
+            'catalogSeo' => $catalogSeo,
+            'catalogBreadcrumbData' => $catalogBreadcrumbData,
         ]);
     }
 
@@ -143,6 +165,42 @@ class StoreController extends Controller
         $canReview = $request->user()?->role === 'customer' && $request->user()->orders()
             ->where('status', 'Livrée')->whereHas('items', fn ($query) => $query->where('product_id', $product->id))->exists();
 
-        return view('store.show', compact('product', 'gallery', 'similarProducts', 'canReview'));
+        $productSeoDescription = Str::limit(trim($product->description ?: collect([
+            $product->name,
+            $product->brand,
+            $product->model,
+            $product->condition,
+            'Référence '.$product->sku,
+        ])->filter()->unique()->implode(' · ').'.'), 160, '');
+        $productStructuredData = Seo::product($product);
+        $productBreadcrumbItems = [
+            ['name' => 'Accueil', 'url' => '/'],
+            [
+                'name' => $product->category->name,
+                'url' => '/?'.http_build_query(['category' => $product->category->slug]),
+            ],
+        ];
+        if ($product->family) {
+            $family = Str::of($product->family)->before('>')->trim()->toString();
+            $productBreadcrumbItems[] = [
+                'name' => $family,
+                'url' => '/?'.http_build_query([
+                    'category' => $product->category->slug,
+                    'family' => $family,
+                ]),
+            ];
+        }
+        $productBreadcrumbItems[] = ['name' => $product->name];
+        $productBreadcrumbData = Seo::breadcrumbs($productBreadcrumbItems);
+
+        return view('store.show', compact(
+            'product',
+            'gallery',
+            'similarProducts',
+            'canReview',
+            'productSeoDescription',
+            'productStructuredData',
+            'productBreadcrumbData',
+        ));
     }
 }

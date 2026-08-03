@@ -27,8 +27,11 @@ class CartController extends Controller
         }
 
         abort_if(! $product->active || $product->stock < 1, 422, 'Produit indisponible');
+        $data = $request->validate([
+            'quantity' => ['sometimes', 'integer', 'min:1', 'max:'.$product->stock],
+        ], ['quantity.max' => 'La quantité demandée dépasse le stock disponible.']);
         $cart = $request->session()->get('cart', []);
-        $cart[$product->id] = min(($cart[$product->id] ?? 0) + max(1, (int) $request->input('quantity', 1)), $product->stock);
+        $cart[$product->id] = min(($cart[$product->id] ?? 0) + (int) ($data['quantity'] ?? 1), $product->stock);
         $request->session()->put('cart', $cart);
 
         if ($request->expectsJson()) {
@@ -57,13 +60,15 @@ class CartController extends Controller
             return redirect()->route('pro.index')->with('error', 'Le panier particulier est séparé de votre espace professionnel.');
         }
 
-        $quantity = max(0, min((int) $request->input('quantity'), $product->stock));
+        $data = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:'.$product->stock],
+        ], [
+            'quantity.min' => 'Utilisez le bouton Supprimer pour retirer un article.',
+            'quantity.max' => 'La quantité demandée dépasse le stock disponible.',
+        ]);
+        $quantity = (int) $data['quantity'];
         $cart = $request->session()->get('cart', []);
-        if ($quantity === 0) {
-            unset($cart[$product->id]);
-        } else {
-            $cart[$product->id] = $quantity;
-        }
+        $cart[$product->id] = $quantity;
         $request->session()->put('cart', $cart);
 
         return back()->with('success', 'Panier mis à jour.');
@@ -75,8 +80,11 @@ class CartController extends Controller
             return redirect()->route('pro.index')->with('error', 'Les achats particuliers sont séparés de votre espace professionnel.');
         }
         abort_if(! $product->active || $product->stock < 1, 422, 'Produit indisponible');
+        $data = $request->validate([
+            'quantity' => ['sometimes', 'integer', 'min:1', 'max:'.$product->stock],
+        ], ['quantity.max' => 'La quantité demandée dépasse le stock disponible.']);
         $cart = $request->session()->get('cart', []);
-        $cart[$product->id] = min(max(1, (int) $request->input('quantity', 1)), $product->stock);
+        $cart[$product->id] = (int) ($data['quantity'] ?? 1);
         $request->session()->put('cart', $cart);
 
         return redirect()->route('checkout.index');

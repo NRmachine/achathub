@@ -13,6 +13,16 @@
     <a href="{{ route('messages.index') }}"><i class="bi bi-chat-dots"></i><span><strong>Besoin d’un conseil ?</strong><small>Écrire au service commercial</small></span><i class="bi bi-arrow-right ms-auto"></i></a>
 </section>
 
+<form class="bg-white border rounded p-3 mb-3" method="get" action="{{ route('pro.index') }}">
+    <div class="row g-2 align-items-end">
+        <div class="col-lg-5"><label class="form-label small fw-semibold" for="pro-catalog-q">Produit, référence ou description</label><input id="pro-catalog-q" class="form-control" name="q" value="{{ request('q') }}" placeholder="Ex. USB-C, chargeur, F8002"></div>
+        <div class="col-sm-6 col-lg-3"><label class="form-label small fw-semibold" for="pro-availability">Disponibilité</label><select id="pro-availability" class="form-select" name="availability"><option value="">Tous les produits</option><option value="available" @selected(request('availability')==='available')>Commandables maintenant</option><option value="preorder" @selected(request('availability')==='preorder')>Sur précommande</option></select></div>
+        <div class="col-sm-6 col-lg-2"><label class="form-label small fw-semibold" for="pro-sort">Trier par</label><select id="pro-sort" class="form-select" name="sort"><option value="">Catégorie</option><option value="price_asc" @selected(request('sort')==='price_asc')>Prix croissant</option><option value="price_desc" @selected(request('sort')==='price_desc')>Prix décroissant</option><option value="stock_desc" @selected(request('sort')==='stock_desc')>Stock disponible</option><option value="minimum_asc" @selected(request('sort')==='minimum_asc')>Petit minimum</option></select></div>
+        <div class="col-lg-2 d-flex gap-2"><button class="btn btn-dark flex-grow-1">Filtrer</button>@if(request()->hasAny(['q','availability','sort','category']))<a class="btn btn-outline-secondary" href="{{ route('pro.index') }}" aria-label="Effacer les filtres"><i class="bi bi-x-lg"></i></a>@endif</div>
+    </div>
+    @if(request('category'))<input type="hidden" name="category" value="{{ request('category') }}">@endif
+</form>
+
 <div class="pro-steps">
     <div class="pro-step"><b>1</b><span><strong>Consultez le catalogue</strong>Découvrez les références et leurs tarifs indicatifs HT.</span></div>
     <div class="pro-step"><b>2</b><span><strong>Choisissez vos quantités</strong>Respectez le minimum indiqué pour chaque référence.</span></div>
@@ -30,20 +40,7 @@
 
 <div class="pro-products">
 @forelse($products as $product)
-    <article class="pro-product-card">
-        <div class="pro-product-image"><img src="{{ $product->image }}" alt="{{ $product->name }}" loading="lazy" decoding="async"><span>{{ $product->stock > 0 ? 'EN STOCK' : 'ÉPUISÉ' }}</span></div>
-        <div class="pro-product-body">
-            <div class="pro-product-meta">{{ $product->category }} · {{ $product->sku }}</div>
-            <h2>{{ $product->name }}</h2>
-            <div class="pro-product-price">{{ number_format($product->wholesale_price_ht,2,',',' ') }} € <small>HT / unité</small></div>
-            <div class="pro-product-min">Minimum {{ $product->minimum_order_quantity }} unités · Stock {{ $product->stock }}</div>
-            @if($product->stock >= $product->minimum_order_quantity)
-            <form class="pro-preorder-form d-flex gap-2" method="post" action="{{ route('pro.cart.products.add',$product) }}">@csrf<input class="form-control" style="max-width:90px" type="number" name="quantity" value="{{ $product->minimum_order_quantity }}" min="{{ $product->minimum_order_quantity }}" max="{{ $product->stock }}" aria-label="Quantité de {{ $product->name }}"><button class="flex-grow-1"><i class="bi bi-cart-plus me-2"></i>Ajouter au panier</button></form>
-            @else
-            <form class="pro-preorder-form" method="post" action="{{ route('pro.products.preorder',$product) }}">@csrf<button><i class="bi bi-send me-2"></i>Précommander le réassort</button></form>
-            @endif
-        </div>
-    </article>
+    @include('professional.partials.product-card', ['product' => $product])
 @empty
     <div class="alert alert-light border grid-column-all">Aucun produit ne correspond à votre recherche.</div>
 @endforelse

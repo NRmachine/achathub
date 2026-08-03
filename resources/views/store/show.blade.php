@@ -1,5 +1,13 @@
 @extends('layouts.app')
-@section('title', $product->name.' - AchatHub')
+@section('title', $product->name.' | AchatHub')
+@section('meta_description', $productSeoDescription)
+@section('canonical', \App\Support\Seo::root().route('products.show', $product, false))
+@section('og_type', 'product')
+@section('og_image', \App\Support\Seo::absoluteUrl($gallery->first() ?: '/assets/category-accessoires.webp?v=20260802b'))
+@push('structured-data')
+    <x-structured-data :data="$productStructuredData" />
+    <x-structured-data :data="$productBreadcrumbData" />
+@endpush
 @section('content')
 <div class="container product-page py-4 py-lg-5">
     <nav class="catalog-breadcrumb mb-4"><a href="{{ route('home') }}">Accueil</a><i class="bi bi-chevron-right"></i><a href="{{ route('home',['category'=>$product->category->slug]) }}">{{ $product->category->name }}</a>@if($product->family)<i class="bi bi-chevron-right"></i><a href="{{ route('home',['category'=>$product->category->slug,'family'=>str($product->family)->before('>')->trim()]) }}">{{ str($product->family)->before('>')->trim() }}</a>@endif</nav>

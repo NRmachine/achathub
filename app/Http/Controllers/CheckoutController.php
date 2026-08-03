@@ -24,6 +24,7 @@ class CheckoutController extends Controller
             'cart' => $cart,
             'shippingOptions' => $this->shippingOptions($cart['subtotal']),
             'paymentOptions' => $this->paymentOptions(),
+            'savedAddress' => $request->user()?->addresses()->orderByDesc('default')->latest()->first(),
         ]);
     }
 
@@ -33,11 +34,17 @@ class CheckoutController extends Controller
             return redirect()->route('pro.index')->with('error', 'Le paiement particulier est séparé de votre espace professionnel.');
         }
         $data = $request->validate([
-            'email' => ['required', 'email', 'max:160'], 'name' => ['required', 'max:120'], 'phone' => ['required', 'max:30'],
-            'address' => ['required', 'max:500'], 'postal_code' => ['required', 'max:10'], 'city' => ['required', 'max:100'],
+            'email' => ['required', 'email', 'max:160'], 'name' => ['required', 'string', 'max:120'],
+            'phone' => ['required', 'string', 'max:30', 'regex:/^(?=(?:.*\d){8})[0-9+().\s-]+$/'],
+            'address' => ['required', 'string', 'max:500'], 'postal_code' => ['required', 'string', 'max:10'], 'city' => ['required', 'string', 'max:100'],
             'shipping_method' => ['required', 'in:standard,relay,express'],
             'payment_method' => ['required', Rule::in(array_keys($this->paymentOptions()))],
             'notes' => ['nullable', 'max:1000'],
+            'save_address' => ['nullable', 'boolean'],
+        ], [
+            'phone.regex' => 'Saisissez un numéro de téléphone valide, avec au moins 8 chiffres.',
+            'shipping_method.required' => 'Choisissez un mode de livraison.',
+            'payment_method.required' => 'Choisissez un moyen de paiement.',
         ]);
         $cart = $this->cart($request);
         abort_if($cart['items']->isEmpty(), 422, 'Votre panier est vide.');
@@ -65,6 +72,21 @@ class CheckoutController extends Controller
 
             return $order;
         });
+        if ($request->user() && $request->boolean('save_address')) {
+            $savedAddress = $request->user()->addresses()->where('default', true)->first();
+            $addressData = [
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'address' => $data['address'],
+                'postal_code' => $data['postal_code'],
+                'city' => $data['city'],
+                'default' => true,
+            ];
+
+            $savedAddress
+                ? $savedAddress->update($addressData)
+                : $request->user()->addresses()->create([...$addressData, 'label' => 'Livraison']);
+        }
         $request->session()->forget('cart');
         $mailer->orderCreated($order->load('user'));
 

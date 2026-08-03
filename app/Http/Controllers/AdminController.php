@@ -177,6 +177,8 @@ class AdminController extends Controller
 
     public function resellers(Request $request)
     {
+        $professionalCatalog = ProfessionalProduct::query();
+
         return view('admin.resellers', [
             'requests' => ResellerRequest::with(['user', 'reviewer'])->latest()->paginate(25),
             'displays' => ProfessionalDisplay::withCount('products')->orderBy('sort_order')->get(),
@@ -191,6 +193,17 @@ class AdminController extends Controller
                 ->orderBy('name')
                 ->paginate(25, ['*'], 'pro_products_page')
                 ->withQueryString(),
+            'professionalCatalogStats' => [
+                'total' => (clone $professionalCatalog)->count(),
+                'visible' => (clone $professionalCatalog)->where('active', true)->count(),
+                'orderable' => (clone $professionalCatalog)->where('active', true)->whereColumn('stock', '>=', 'minimum_order_quantity')->count(),
+                'needs_content' => (clone $professionalCatalog)->where(fn ($query) => $query
+                    ->whereNull('description')
+                    ->orWhere('description', '')
+                    ->orWhere('description', 'like', 'Produit D-Power destiné à la revente%')
+                    ->orWhereNull('image')
+                    ->orWhere('image', ''))->count(),
+            ],
         ]);
     }
 
@@ -226,7 +239,9 @@ class AdminController extends Controller
     public function updateProfessionalProduct(Request $request, ProfessionalProduct $professionalProduct)
     {
         $data = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
             'category' => ['required', 'string', 'max:120'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'wholesale_price_ht' => ['required', 'numeric', 'min:0'],
             'minimum_order_quantity' => ['required', 'integer', 'min:1', 'max:10000'],
             'stock' => ['required', 'integer', 'min:0', 'max:1000000'],

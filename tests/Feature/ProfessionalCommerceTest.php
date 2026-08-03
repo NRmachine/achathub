@@ -170,7 +170,9 @@ class ProfessionalCommerceTest extends TestCase
         ]);
 
         $this->actingAs($admin)->patch(route('admin.professional-products.update', $product), [
+            'name' => 'Produit grossiste optimisé',
             'category' => 'Câbles',
+            'description' => 'Description commerciale vérifiée dans le catalogue.',
             'wholesale_price_ht' => 4.25,
             'minimum_order_quantity' => 10,
             'stock' => 120,
@@ -179,12 +181,57 @@ class ProfessionalCommerceTest extends TestCase
 
         $this->assertDatabaseHas('professional_products', [
             'id' => $product->id,
+            'name' => 'Produit grossiste optimisé',
             'category' => 'Câbles',
+            'description' => 'Description commerciale vérifiée dans le catalogue.',
             'wholesale_price_ht' => 4.25,
             'minimum_order_quantity' => 10,
             'stock' => 120,
             'active' => false,
         ]);
+    }
+
+    public function test_professional_product_page_links_related_products_and_displays(): void
+    {
+        $user = User::factory()->create(['role' => 'reseller']);
+        ResellerRequest::create($this->applicationData() + ['user_id' => $user->id, 'status' => 'Approuvée']);
+        $product = ProfessionalProduct::create([
+            'sku' => 'PRO-FICHE',
+            'name' => 'Câble professionnel fiche',
+            'category' => 'Câbles',
+            'description' => 'Description catalogue vérifiée.',
+            'wholesale_price_ht' => 4.50,
+            'minimum_order_quantity' => 5,
+            'stock' => 30,
+            'active' => true,
+        ]);
+        ProfessionalProduct::create(['sku' => 'PRO-LIE', 'name' => 'Autre câble associé', 'category' => 'Câbles', 'wholesale_price_ht' => 3, 'minimum_order_quantity' => 5, 'stock' => 20, 'active' => true]);
+        ProfessionalProduct::create(['sku' => 'PRO-AUTRE', 'name' => 'Produit sans rapport', 'category' => 'Audio', 'wholesale_price_ht' => 8, 'minimum_order_quantity' => 3, 'stock' => 20, 'active' => true]);
+        $display = ProfessionalDisplay::create(['name' => 'Présentoir fiche', 'slug' => 'presentoir-fiche', 'wholesale_price_ht' => 99, 'vat_rate' => 20, 'active' => true]);
+        $display->products()->attach($product, ['quantity' => 8, 'unit_price_ht' => 4.50]);
+
+        $this->actingAs($user)
+            ->get(route('pro.products.show', $product))
+            ->assertOk()
+            ->assertSee('Description catalogue vérifiée.')
+            ->assertSee('22,50 € HT le lot')
+            ->assertSee('Présentoir fiche')
+            ->assertSee('8 unité(s) incluse(s)')
+            ->assertSee('Autre câble associé')
+            ->assertDontSee('Produit sans rapport');
+    }
+
+    public function test_professional_catalog_filters_availability_and_searches_descriptions(): void
+    {
+        $user = User::factory()->create(['role' => 'reseller']);
+        ResellerRequest::create($this->applicationData() + ['user_id' => $user->id, 'status' => 'Approuvée']);
+        ProfessionalProduct::create(['sku' => 'PRO-DISPO', 'name' => 'Produit disponible', 'category' => 'Câbles', 'description' => 'Connectique recherchée', 'wholesale_price_ht' => 4, 'minimum_order_quantity' => 5, 'stock' => 20, 'active' => true]);
+        ProfessionalProduct::create(['sku' => 'PRO-REASSORT', 'name' => 'Produit à réassortir', 'category' => 'Audio', 'description' => 'Audio recherché', 'wholesale_price_ht' => 9, 'minimum_order_quantity' => 5, 'stock' => 2, 'active' => true]);
+
+        $this->actingAs($user)->get(route('pro.index', ['q' => 'connectique']))
+            ->assertOk()->assertSee('Produit disponible')->assertDontSee('Produit à réassortir');
+        $this->get(route('pro.index', ['availability' => 'preorder']))
+            ->assertOk()->assertSee('Produit à réassortir')->assertDontSee('Produit disponible');
     }
 
     public function test_reseller_login_redirects_directly_to_professional_catalog(): void

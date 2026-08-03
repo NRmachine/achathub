@@ -9,19 +9,20 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
-    public function loginForm()
+    public function loginForm(Request $request)
     {
-        return view('auth.login');
+        return view('auth.login', ['redirectTo' => $this->allowedRedirect($request)]);
     }
 
-    public function registerForm()
+    public function registerForm(Request $request)
     {
-        return view('auth.register');
+        return view('auth.register', ['redirectTo' => $this->allowedRedirect($request)]);
     }
 
     public function professionalLoginForm()
@@ -36,7 +37,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required']]);
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+            'redirect_to' => ['nullable', Rule::in(['checkout'])],
+        ]);
+        $credentials = ['email' => $data['email'], 'password' => $data['password']];
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'Identifiants incorrects.'])->onlyInput('email');
         }
@@ -55,6 +61,10 @@ class AuthController extends Controller
 
         if ($request->user()->role === 'admin') {
             return redirect()->route('admin.index');
+        }
+
+        if (($data['redirect_to'] ?? null) === 'checkout') {
+            return redirect()->route('checkout.index');
         }
 
         return redirect()->intended(route('account.index'));
@@ -101,15 +111,25 @@ class AuthController extends Controller
 
     public function register(Request $request, TransactionalMailer $mailer)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:120'], 'email' => ['required', 'email', 'unique:users'], 'phone' => ['nullable', 'string', 'max:30'], 'password' => ['required', 'confirmed', PasswordRule::min(12)->letters()->numbers()], 'terms' => ['accepted']]);
-        unset($data['terms']);
-        $user = User::create([...$data, 'password' => Hash::make($data['password']), 'role' => 'customer', 'terms_accepted_at' => now(), 'privacy_version' => '2026-07-15']);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'unique:users'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'password' => ['required', 'confirmed', PasswordRule::min(12)->letters()->numbers()],
+            'terms' => ['accepted'],
+            'redirect_to' => ['nullable', Rule::in(['checkout'])],
+        ]);
+        $redirectTo = $data['redirect_to'] ?? null;
+        unset($data['terms'], $data['redirect_to']);
+        $user = User::create([...$data, 'password' => Hash::make($data['password']), 'role' => 'customer', 'terms_accepted_at' => now(), 'privacy_version' => '2026-08-03']);
         Auth::login($user);
         $request->session()->regenerate();
         $mailer->verification($user);
         $mailer->customerCreated($user);
 
-        return redirect()->route('account.index')->with('success', 'Votre compte AchatHub est créé. Consultez votre e-mail pour confirmer votre adresse.');
+        $target = $redirectTo === 'checkout' ? 'checkout.index' : 'account.index';
+
+        return redirect()->route($target)->with('success', 'Votre compte AchatHub est créé. Consultez votre e-mail pour confirmer votre adresse.');
     }
 
     public function forgotPasswordForm()
@@ -175,5 +195,10 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+    }
+
+    private function allowedRedirect(Request $request): ?string
+    {
+        return $request->string('redirect_to')->toString() === 'checkout' ? 'checkout' : null;
     }
 }
