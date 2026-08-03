@@ -63,7 +63,8 @@ class CommerceTest extends TestCase
             ->assertSee('Stock visible')
             ->assertSee('Facture disponible')
             ->assertSee('Connexion professionnelle')
-            ->assertSee('achathub-mark.webp', false)
+            ->assertSee('achathub-logo.webp', false)
+            ->assertSee('id="ah-page-loader"', false)
             ->assertSee('achathub-speed-commerce.css', false);
     }
 

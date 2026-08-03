@@ -19,6 +19,8 @@ class SeoTest extends TestCase
             ->assertSee('<link rel="canonical" href="https://www.achathub.com/">', false)
             ->assertSee('index,follow,max-image-preview:large', false)
             ->assertSee('property="og:site_name" content="AchatHub"', false)
+            ->assertSee('rel="icon" type="image/png"', false)
+            ->assertSee('achathub-logo.png?v=20260803b', false)
             ->assertSee('"@type":"Organization"', false)
             ->assertSee('"@type":"WebSite"', false);
     }

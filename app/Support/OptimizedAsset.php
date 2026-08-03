@@ -7,7 +7,7 @@ final class OptimizedAsset
     public static function image(?string $path): ?string
     {
         return match ($path) {
-            '/assets/achathub-mark.png', '/assets/achathub-mark.webp' => '/assets/achathub-mark.webp?v=20260802b',
+            '/assets/achathub-mark.png', '/assets/achathub-mark.webp', '/assets/achathub-logo.png', '/assets/achathub-logo.webp' => '/assets/achathub-logo.webp?v=20260803b',
             '/assets/presentoir-achathub.png', '/assets/presentoir-achathub.webp' => '/assets/presentoir-achathub.webp?v=20260802b',
             '/assets/category-accessoires.png', '/assets/category-accessoires.webp' => '/assets/category-accessoires.webp?v=20260802b',
             '/assets/category-chargeurs-cables.png', '/assets/category-chargeurs-cables.webp' => '/assets/category-chargeurs-cables.webp?v=20260802b',

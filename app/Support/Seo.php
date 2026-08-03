@@ -156,7 +156,7 @@ final class Seo
                     '@id' => $root.'/#organization',
                     'name' => 'AchatHub',
                     'url' => $root.'/',
-                    'logo' => self::absoluteUrl('/assets/achathub-mark.webp?v=20260802b'),
+                    'logo' => self::absoluteUrl('/assets/achathub-logo.png?v=20260803b'),
                 ],
                 [
                     '@type' => 'WebSite',

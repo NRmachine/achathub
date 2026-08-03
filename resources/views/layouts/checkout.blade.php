@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Commande sécurisée - AchatHub')</title>
     <meta name="robots" content="noindex,follow">
+    @include('components.brand-head')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="{{ asset('css/achathub.css') }}?v=20260802b" rel="stylesheet">
@@ -13,7 +14,8 @@
     <link href="{{ asset('css/achathub-design.css') }}?v=20260803a" rel="stylesheet">
 </head>
 <body class="checkout-body">
-<header class="checkout-header"><div class="container d-flex align-items-center justify-content-between py-3"><a href="{{ route('home') }}" class="checkout-brand" aria-label="AchatHub - Accueil"><img src="{{ asset('assets/achathub-mark.webp') }}?v=20260802b" width="42" height="42" alt=""><strong>AchatHub</strong></a><span class="checkout-secure"><i class="bi bi-shield-check"></i> Paiement sécurisé</span></div></header>
+@include('components.brand-loader')
+<header class="checkout-header"><div class="container d-flex align-items-center justify-content-between py-3"><a href="{{ route('home') }}" class="checkout-brand" aria-label="AchatHub - Accueil"><img src="{{ asset('assets/achathub-logo.webp') }}?v=20260803b" width="42" height="37" alt=""><strong>AchatHub</strong></a><span class="checkout-secure"><i class="bi bi-shield-check"></i> Paiement sécurisé</span></div></header>
 @if($errors->any())
 <div class="container pt-3">
     <div class="alert alert-danger mb-0" role="alert" aria-live="assertive" tabindex="-1" id="checkout-error-summary">
