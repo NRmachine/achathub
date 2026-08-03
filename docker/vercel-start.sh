@@ -11,7 +11,10 @@ mkdir -p \
 # Vercel attend un port ouvert en moins de 15 secondes. Le serveur démarre donc
 # immédiatement, puis les migrations protégées par verrou se terminent pendant
 # que le conteneur reste disponible.
-php artisan serve --host=0.0.0.0 --port="${PORT:-80}" &
+(
+    cd public
+    exec php -S "0.0.0.0:${PORT:-80}" ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
+) &
 server_pid=$!
 
 if ! php artisan achathub:vercel-boot; then

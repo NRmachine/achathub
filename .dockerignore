@@ -1,21 +1,30 @@
 .git
+.github
+.codex
 .agents
 .vercel
 .env
-.env.vercel
-.env.production
+.env.*
+!.env.example
 backups
 outputs
-public/assets/achathub-assets
-database/database.sqlite
-rendu_tp7 2
+node_modules
+tests
+bootstrap/cache/*.php
 storage/app/backups
 storage/app/commerce-legacy.json
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-bootstrap/cache/*.php
-tests
+database/database.sqlite
+rendu_tp7 2
 vercel-proxy
 vendor
+public/assets/achathub-assets
+public/assets/achathub-mark.png
+public/assets/presentoir-achathub.png
+public/assets/achathub-hero-accessoires.png
+public/assets/category-accessoires.png
+public/assets/category-chargeurs-cables.png
+public/assets/category-pieces-detachees.png

@@ -7,8 +7,8 @@
     <title>@yield('title', 'Commande sécurisée - AchatHub')</title>
     <meta name="robots" content="noindex,follow">
     @include('components.brand-head')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}?v=5.3.8" rel="stylesheet">
+    <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.min.css') }}?v=1.11.3" rel="stylesheet">
     <link href="{{ asset('css/achathub.css') }}?v=20260802b" rel="stylesheet">
     <link href="{{ asset('css/achathub-commerce.css') }}?v=20260802b" rel="stylesheet">
     <link href="{{ asset('css/achathub-design.css') }}?v=20260803a" rel="stylesheet">
@@ -26,7 +26,7 @@
 @endif
 <main>@yield('content')</main>
 <footer class="checkout-footer"><div class="container d-flex flex-wrap justify-content-between gap-2"><small>© {{ date('Y') }} AchatHub</small><div><a href="{{ route('legal.terms') }}">CGV</a><a href="{{ route('legal.privacy') }}">Confidentialité</a><a href="{{ route('support.index') }}">Aide</a></div></div></footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}?v=5.3.8" defer></script>
 @stack('scripts')
 </body>
 </html>

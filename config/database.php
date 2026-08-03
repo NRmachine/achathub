@@ -5,6 +5,10 @@ use Pdo\Mysql;
 
 $postgresUrl = env('DATABASE_URL') ?: env('POSTGRES_URL') ?: env('DB_URL');
 $directPostgresUrl = env('DATABASE_URL_UNPOOLED') ?: env('POSTGRES_URL_NON_POOLING') ?: $postgresUrl;
+$postgresRuntimeOptions = extension_loaded('pdo_pgsql') && filter_var(
+    env('DB_PERSISTENT', env('APP_ENV') === 'production'),
+    FILTER_VALIDATE_BOOL,
+) ? [\PDO::ATTR_PERSISTENT => true] : [];
 
 return [
 
@@ -100,6 +104,7 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'options' => $postgresRuntimeOptions,
         ],
 
         'pgsql_migration' => [

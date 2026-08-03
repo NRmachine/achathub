@@ -33,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
             // Production must always use the injected Neon PostgreSQL URL.
             config()->set('database.default', 'pgsql');
 
+            // A database-backed session adds two remote PostgreSQL round trips to
+            // every public page. The encrypted cookie driver keeps carts and
+            // authentication portable across Vercel containers without that cost.
+            config()->set('session.driver', 'cookie');
+
             URL::forceScheme('https');
 
             // HTTP requests must keep the public host forwarded by Vercel. Forcing

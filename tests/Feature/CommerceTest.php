@@ -22,6 +22,24 @@ class CommerceTest extends TestCase
         $this->assertEquals(1, session('cart')[$product->id]);
     }
 
+    public function test_encrypted_cookie_session_keeps_the_cart_between_real_requests(): void
+    {
+        config()->set('session.driver', 'cookie');
+
+        $category = Category::create(['name' => 'Accessoires', 'slug' => 'accessoires-cookie']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'sku' => 'COOKIE-CART-1',
+            'name' => 'Produit panier cookie',
+            'slug' => 'produit-panier-cookie',
+            'price' => 12.90,
+            'stock' => 5,
+        ]);
+
+        $this->post(route('cart.add', $product))->assertRedirect();
+        $this->get(route('cart.index'))->assertOk()->assertSee('Produit panier cookie');
+    }
+
     public function test_product_can_be_added_without_reloading_the_page(): void
     {
         $category = Category::create(['name' => 'Accessoires', 'slug' => 'accessoires']);
@@ -65,6 +83,9 @@ class CommerceTest extends TestCase
             ->assertSee('Connexion professionnelle')
             ->assertSee('achathub-logo.webp', false)
             ->assertSee('id="ah-page-loader"', false)
+            ->assertSee('vendor/bootstrap/bootstrap.min.css', false)
+            ->assertSee('vendor/bootstrap-icons/bootstrap-icons.min.css', false)
+            ->assertDontSee('cdn.jsdelivr.net', false)
             ->assertSee('achathub-speed-commerce.css', false);
     }
 

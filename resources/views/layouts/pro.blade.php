@@ -8,9 +8,8 @@
     <meta name="description" content="Espace professionnel AchatHub pour commander des produits grossistes et des présentoirs prêts à vendre.">
     <meta name="robots" content="noindex,follow">
     @include('components.brand-head')
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}?v=5.3.8" rel="stylesheet">
+    <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.min.css') }}?v=1.11.3" rel="stylesheet">
     <link href="{{ asset('css/achathub-pro.css') }}?v=20260802b" rel="stylesheet">
     <link href="{{ asset('css/achathub-pro-mobile.css') }}?v=20260802b" rel="stylesheet">
     <link href="{{ asset('css/achathub-management.css') }}?v=20260802b" rel="stylesheet">
@@ -100,7 +99,7 @@
     <a class="{{ request()->routeIs('pro.cart') || request()->routeIs('pro.checkout') ? 'active' : '' }}" href="{{ route('pro.cart') }}"><i class="bi bi-cart3"></i><span>Panier</span>@if($proCartCount)<b>{{ $proCartCount }}</b>@endif</a>
     <button type="button" data-bs-toggle="offcanvas" data-bs-target="#proMobileMenu" aria-controls="proMobileMenu"><i class="bi bi-list"></i><span>Menu</span></button>
 </nav>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}?v=5.3.8" defer></script>
 @include('components.cookie-banner')
 </body>
 </html>
