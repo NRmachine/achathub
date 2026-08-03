@@ -17,6 +17,7 @@ RUN apk add --no-cache libxml2 libpq libxml2-dev postgresql-dev \
     && apk del libxml2-dev postgresql-dev
 
 RUN printf '%s\n' \
+    'expose_php=Off' \
     'opcache.enable=1' \
     'opcache.enable_cli=1' \
     'opcache.validate_timestamps=0' \

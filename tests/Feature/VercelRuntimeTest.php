@@ -19,6 +19,18 @@ class VercelRuntimeTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_production_runtime_secures_cookies_and_hides_the_php_version(): void
+    {
+        $sessionConfig = file_get_contents(base_path('config/session.php'));
+        $dockerfile = file_get_contents(base_path('Dockerfile.vercel'));
+
+        $this->assertStringContainsString(
+            "'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production')",
+            $sessionConfig,
+        );
+        $this->assertStringContainsString("'expose_php=Off'", $dockerfile);
+    }
+
     public function test_production_catalog_can_be_bootstrapped_without_overwriting_later_changes(): void
     {
         $this->artisan('achathub:bootstrap-catalog')->assertSuccessful();
