@@ -23,4 +23,16 @@ if ! php artisan achathub:vercel-boot; then
     exit 1
 fi
 
+# Prime Laravel, the persistent Neon connection and the local storefront cache
+# inside the HTTP process before the container receives regular traffic.
+php -r '
+    $port = getenv("PORT") ?: "80";
+    $context = stream_context_create(["http" => [
+        "timeout" => 10,
+        "ignore_errors" => true,
+        "header" => "Host: www.achathub.com\r\nUser-Agent: AchatHub-Warmup/1.0\r\n",
+    ]]);
+    @file_get_contents("http://127.0.0.1:{$port}/?warmup=1", false, $context);
+' || true
+
 wait "$server_pid"

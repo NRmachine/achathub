@@ -16,11 +16,16 @@ class StorefrontNavigation
             return $this->resolved;
         }
 
+        // This menu is read on every storefront page. On Vercel, keeping the
+        // ten-minute snapshot in the container avoids a remote PostgreSQL cache
+        // lookup for pages such as login, support and legal notices.
+        $cache = app()->isProduction() ? Cache::store('file') : Cache::store();
+
         if (app()->environment('testing')) {
-            Cache::forget('storefront.navigation.v4');
+            $cache->forget('storefront.navigation.v4');
         }
 
-        $data = Cache::remember(
+        $data = $cache->remember(
             'storefront.navigation.v4',
             now()->addMinutes(10),
             function (): array {

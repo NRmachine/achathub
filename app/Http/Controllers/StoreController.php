@@ -65,10 +65,13 @@ class StoreController extends Controller
         $products = $productsQuery->paginate(24)->withQueryString();
 
         $categories = $navigation->data()['menuCategories'];
+        // Catalog metadata changes infrequently and does not need a Neon round
+        // trip on every page rendered by the same Vercel container.
+        $catalogCache = app()->isProduction() ? Cache::store('file') : Cache::store();
         if (app()->environment('testing')) {
-            Cache::forget('storefront.catalog-metadata.v4');
+            $catalogCache->forget('storefront.catalog-metadata.v4');
         }
-        $metadata = Cache::remember(
+        $metadata = $catalogCache->remember(
             'storefront.catalog-metadata.v4',
             now()->addMinutes(10),
             fn (): array => [
