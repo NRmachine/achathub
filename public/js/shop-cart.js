@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const toast = document.querySelector('[data-shop-toast]');
     const panelElement = document.getElementById('instantCart');
+    let csrfPromise = null;
     const notify = (message, error = false) => {
         if (!toast) return;
         toast.textContent = message;
@@ -17,6 +18,41 @@ document.addEventListener('DOMContentLoaded', () => {
             summary.textContent = `${count} article${count > 1 ? 's' : ''} dans le panier`;
         });
     };
+    const ensureSessionCsrf = async () => {
+        if (document.body.dataset.sessionReady === '1') return;
+        csrfPromise ??= fetch('/session/csrf', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        }).then(async (response) => {
+            const data = await response.json();
+            if (!response.ok || !data.token) throw new Error('La session sécurisée n’a pas pu être créée.');
+            document.querySelectorAll('input[name="_token"]').forEach((input) => { input.value = data.token; });
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) meta.content = data.token;
+            document.body.dataset.sessionReady = '1';
+        }).catch((error) => {
+            csrfPromise = null;
+            throw error;
+        });
+
+        await csrfPromise;
+    };
+
+    document.addEventListener('submit', async (event) => {
+        const form = event.target.closest('.cookie-banner form');
+        if (!form || document.body.dataset.sessionReady === '1') return;
+        event.preventDefault();
+        if (form.dataset.loading === 'true') return;
+        form.dataset.loading = 'true';
+        const submitter = event.submitter;
+        try {
+            await ensureSessionCsrf();
+            form.requestSubmit(submitter || undefined);
+        } catch (error) {
+            form.dataset.loading = 'false';
+            notify(error.message || 'La préférence n’a pas pu être enregistrée.', true);
+        }
+    });
 
     document.addEventListener('submit', async (event) => {
         const form = event.target.closest('.js-add-to-cart');
@@ -31,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (label) label.textContent = 'Ajout en cours…';
 
         try {
+            await ensureSessionCsrf();
             const response = await fetch(form.action, {
                 method: 'POST',
                 body: new FormData(form),

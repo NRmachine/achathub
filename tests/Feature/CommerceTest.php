@@ -100,9 +100,26 @@ class CommerceTest extends TestCase
         app()->detectEnvironment(fn (): string => 'production');
 
         DB::enableQueryLog();
-        $this->get(route('home'))->assertOk()->assertSee('Accessoire de test');
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Accessoire de test')
+            ->assertHeader('Cache-Control', 'max-age=0, must-revalidate, public')
+            ->assertHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+            ->assertHeader('Vary', 'Cookie')
+            ->assertHeaderMissing('Set-Cookie');
 
         $this->assertCount(0, DB::getQueryLog());
+    }
+
+    public function test_the_cached_landing_can_create_a_fresh_encrypted_csrf_session(): void
+    {
+        config()->set('session.driver', 'cookie');
+
+        $response = $this->getJson(route('session.csrf'))
+            ->assertOk()
+            ->assertJsonStructure(['token']);
+
+        $this->assertNotEmpty($response->headers->getCookies());
     }
 
     public function test_only_a_customer_with_a_delivered_purchase_can_publish_a_review(): void

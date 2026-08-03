@@ -32,6 +32,8 @@ Route::get('/internal/cron/fournisseur', SupplierCronController::class)
     ->name('internal.cron.supplier');
 
 Route::get('/', [StoreController::class, 'index'])->name('home');
+Route::get('/session/csrf', fn () => response()->json(['token' => csrf_token()]))
+    ->name('session.csrf');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/produits/{product}', [StoreController::class, 'show'])->name('products.show');
 Route::get('/panier', [CartController::class, 'index'])->name('cart.index');

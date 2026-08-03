@@ -55,6 +55,21 @@ class SecurityHeaders
             $response->headers->set('Pragma', 'no-cache');
         }
 
+        // The anonymous landing page is identical for visitors without cookies.
+        // Removing the newly-created empty session makes it eligible for Vercel's
+        // edge cache; Vary keeps every cart and authenticated response isolated.
+        if (app()->isProduction()
+            && $request->isMethod('GET')
+            && $request->routeIs('home')
+            && $request->query->count() === 0
+            && ! $request->headers->has('Cookie')
+            && $response->isSuccessful()) {
+            $response->headers->remove('Set-Cookie');
+            $response->headers->set('Cache-Control', 'public, max-age=0, must-revalidate');
+            $response->headers->set('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+            $response->setVary('Cookie');
+        }
+
         return $response;
     }
 }
