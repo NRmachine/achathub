@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class CommerceTest extends TestCase
@@ -87,6 +89,20 @@ class CommerceTest extends TestCase
             ->assertSee('vendor/bootstrap-icons/bootstrap-icons.min.css', false)
             ->assertDontSee('cdn.jsdelivr.net', false)
             ->assertSee('achathub-speed-commerce.css', false);
+    }
+
+    public function test_a_cold_production_storefront_uses_the_bundled_catalog_without_database_queries(): void
+    {
+        Cache::store('file')->forget('storefront.catalog-default.v1');
+        Cache::store('file')->forget('storefront.catalog-metadata.v5');
+        Cache::store('file')->forget('storefront.navigation.v5');
+        Cache::store('file')->forget('storefront.container-warmed.v1');
+        app()->detectEnvironment(fn (): string => 'production');
+
+        DB::enableQueryLog();
+        $this->get(route('home'))->assertOk()->assertSee('Accessoire de test');
+
+        $this->assertCount(0, DB::getQueryLog());
     }
 
     public function test_only_a_customer_with_a_delivered_purchase_can_publish_a_review(): void

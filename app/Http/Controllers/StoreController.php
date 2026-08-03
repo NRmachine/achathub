@@ -8,7 +8,10 @@ use App\Models\SiteSetting;
 use App\Services\StorefrontNavigation;
 use App\Support\OptimizedAsset;
 use App\Support\Seo;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -62,36 +65,46 @@ class StoreController extends Controller
             'discount' => $productsQuery->orderByDesc('discount')->orderBy('price'),
             default => $productsQuery->orderByDesc('featured')->orderBy('featured_order')->orderByDesc('discount')->orderByDesc('id'),
         };
-        $products = $productsQuery->paginate(24)->withQueryString();
+        $products = $this->paginateCatalog($request, $productsQuery);
 
         $categories = $navigation->data()['menuCategories'];
         // Catalog metadata changes infrequently and does not need a Neon round
         // trip on every page rendered by the same Vercel container.
         $catalogCache = app()->isProduction() ? Cache::store('file') : Cache::store();
+        $metadataKey = 'storefront.catalog-metadata.v5';
         if (app()->environment('testing')) {
-            $catalogCache->forget('storefront.catalog-metadata.v4');
+            $catalogCache->forget($metadataKey);
         }
-        $metadata = $catalogCache->remember(
-            'storefront.catalog-metadata.v4',
-            now()->addMinutes(10),
-            fn (): array => [
-                'settings' => SiteSetting::query()
-                    ->whereIn('key', ['hero_title', 'hero_text'])
-                    ->pluck('value', 'key')
-                    ->all(),
-                'brands' => Product::query()
-                    ->where('active', true)
-                    ->whereNotNull('brand')
-                    ->distinct()
-                    ->orderBy('brand')
-                    ->limit(30)
-                    ->pluck('brand')
-                    ->all(),
-                'maxCatalogPrice' => (float) Product::query()
-                    ->where('active', true)
-                    ->max('price'),
-            ],
-        );
+        $metadata = $catalogCache->get($metadataKey);
+        if (! is_array($metadata)) {
+            $canUseDatabase = ! app()->isProduction()
+                || $request->boolean('warmup')
+                || (bool) $catalogCache->get('storefront.container-warmed.v1');
+
+            $metadata = $canUseDatabase
+                ? $catalogCache->remember(
+                    $metadataKey,
+                    now()->addMinutes(10),
+                    fn (): array => [
+                        'settings' => SiteSetting::query()
+                            ->whereIn('key', ['hero_title', 'hero_text'])
+                            ->pluck('value', 'key')
+                            ->all(),
+                        'brands' => Product::query()
+                            ->where('active', true)
+                            ->whereNotNull('brand')
+                            ->distinct()
+                            ->orderBy('brand')
+                            ->limit(30)
+                            ->pluck('brand')
+                            ->all(),
+                        'maxCatalogPrice' => (float) Product::query()
+                            ->where('active', true)
+                            ->max('price'),
+                    ],
+                )
+                : $this->bundledCatalogMetadata();
+        }
 
         $catalogSeo = Seo::catalog($request, $selectedCategory, $products);
         $catalogBreadcrumbItems = [['name' => 'Accueil', 'url' => '/']];
@@ -146,6 +159,105 @@ class StoreController extends Controller
         }
 
         return array_values(array_unique($ids));
+    }
+
+    private function paginateCatalog(Request $request, Builder $query): LengthAwarePaginator
+    {
+        $filters = ['q', 'category', 'family', 'subcategory', 'brand', 'in_stock', 'min_price', 'max_price', 'sort', 'page'];
+        if ($request->hasAny($filters)) {
+            return $query->paginate(24)->withQueryString();
+        }
+
+        $cache = app()->isProduction() ? Cache::store('file') : Cache::store();
+        $cacheKey = 'storefront.catalog-default.v1';
+        $warmedKey = 'storefront.container-warmed.v1';
+
+        if (app()->environment('testing')) {
+            $cache->forget($cacheKey);
+        }
+
+        $snapshot = $cache->get($cacheKey);
+        if (! is_array($snapshot)) {
+            $canUseDatabase = ! app()->isProduction()
+                || $request->boolean('warmup')
+                || (bool) $cache->get($warmedKey);
+
+            $snapshot = $canUseDatabase
+                ? $cache->remember($cacheKey, now()->addMinutes(5), fn (): array => $this->databaseCatalogSnapshot($query))
+                : $this->bundledCatalogSnapshot();
+        }
+
+        if ($request->boolean('warmup')) {
+            $cache->forever($warmedKey, true);
+        }
+
+        $items = collect($snapshot['items'])->map(function (array $item): Product {
+            $product = (new Product)->newFromBuilder($item['attributes']);
+            if ($item['category']) {
+                $product->setRelation('category', (new Category)->newFromBuilder($item['category']));
+            }
+
+            return $product;
+        });
+
+        return (new LengthAwarePaginator(
+            $items,
+            (int) $snapshot['total'],
+            (int) $snapshot['per_page'],
+            (int) $snapshot['current_page'],
+            ['path' => Paginator::resolveCurrentPath(), 'pageName' => 'page'],
+        ))->withQueryString();
+    }
+
+    private function databaseCatalogSnapshot(Builder $query): array
+    {
+        $page = $query->paginate(24);
+
+        return [
+            'items' => $page->getCollection()->map(fn (Product $product): array => [
+                'attributes' => $product->getAttributes(),
+                'category' => $product->category?->getAttributes(),
+            ])->all(),
+            'total' => $page->total(),
+            'per_page' => $page->perPage(),
+            'current_page' => $page->currentPage(),
+        ];
+    }
+
+    private function bundledCatalogSnapshot(): array
+    {
+        $catalog = json_decode((string) file_get_contents(database_path('data/public-catalog.json')), true);
+        $categories = collect($catalog['categories'] ?? [])->keyBy(fn (array $category): int => (int) $category['id']);
+        $products = collect($catalog['products'] ?? [])
+            ->filter(fn (array $product): bool => (bool) ($product['active'] ?? true))
+            ->sort(function (array $left, array $right): int {
+                return [(int) ($right['featured'] ?? 0), (int) ($left['featured_order'] ?? 0), (int) ($right['discount'] ?? 0), (int) ($right['id'] ?? 0)]
+                    <=> [(int) ($left['featured'] ?? 0), (int) ($right['featured_order'] ?? 0), (int) ($left['discount'] ?? 0), (int) ($left['id'] ?? 0)];
+            })
+            ->values();
+
+        return [
+            'items' => $products->take(24)->map(fn (array $product): array => [
+                'attributes' => $product,
+                'category' => $categories->get((int) $product['category_id']),
+            ])->all(),
+            'total' => $products->count(),
+            'per_page' => 24,
+            'current_page' => 1,
+        ];
+    }
+
+    private function bundledCatalogMetadata(): array
+    {
+        $catalog = json_decode((string) file_get_contents(database_path('data/public-catalog.json')), true);
+        $products = collect($catalog['products'] ?? [])
+            ->filter(fn (array $product): bool => (bool) ($product['active'] ?? true));
+
+        return [
+            'settings' => [],
+            'brands' => $products->pluck('brand')->filter()->unique()->sort()->take(30)->values()->all(),
+            'maxCatalogPrice' => (float) $products->max('price'),
+        ];
     }
 
     public function show(Request $request, Product $product)
